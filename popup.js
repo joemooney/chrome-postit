@@ -1,15 +1,23 @@
 document.addEventListener('DOMContentLoaded', function() {
   const noteText = document.getElementById('noteText');
+  const noteTags = document.getElementById('noteTags');
   const addNoteBtn = document.getElementById('addNote');
   const notesList = document.getElementById('notesList');
+  const filterTags = document.getElementById('filterTags');
+  const clearFilterBtn = document.getElementById('clearFilter');
+  
+  let allNotes = [];
+  let currentFilter = '';
 
   loadNotes();
 
   addNoteBtn.addEventListener('click', function() {
     const text = noteText.value.trim();
+    const tags = noteTags.value.trim();
     if (text) {
-      addNote(text);
+      addNote(text, tags);
       noteText.value = '';
+      noteTags.value = '';
     }
   });
 
@@ -20,26 +28,57 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
 
-  function addNote(text) {
+  filterTags.addEventListener('input', function() {
+    currentFilter = filterTags.value.trim().toLowerCase();
+    filterNotes();
+  });
+
+  clearFilterBtn.addEventListener('click', function() {
+    filterTags.value = '';
+    currentFilter = '';
+    displayNotes(allNotes);
+  });
+
+  function addNote(text, tags) {
     chrome.storage.local.get(['notes'], function(result) {
       const notes = result.notes || [];
+      const tagArray = tags ? tags.split(',').map(tag => tag.trim()).filter(tag => tag) : [];
       const newNote = {
         id: Date.now(),
         text: text,
+        tags: tagArray,
         timestamp: new Date().toISOString()
       };
       notes.unshift(newNote);
       chrome.storage.local.set({ notes: notes }, function() {
-        displayNotes(notes);
+        allNotes = notes;
+        if (currentFilter) {
+          filterNotes();
+        } else {
+          displayNotes(notes);
+        }
       });
     });
   }
 
   function loadNotes() {
     chrome.storage.local.get(['notes'], function(result) {
-      const notes = result.notes || [];
-      displayNotes(notes);
+      allNotes = result.notes || [];
+      displayNotes(allNotes);
     });
+  }
+
+  function filterNotes() {
+    if (!currentFilter) {
+      displayNotes(allNotes);
+      return;
+    }
+    const filteredNotes = allNotes.filter(note => {
+      return note.tags && note.tags.some(tag => 
+        tag.toLowerCase().includes(currentFilter)
+      );
+    });
+    displayNotes(filteredNotes);
   }
 
   function displayNotes(notes) {
@@ -59,6 +98,22 @@ document.addEventListener('DOMContentLoaded', function() {
     noteContent.className = 'note-content';
     noteContent.textContent = note.text;
 
+    const tagsDiv = document.createElement('div');
+    tagsDiv.className = 'note-tags';
+    if (note.tags && note.tags.length > 0) {
+      note.tags.forEach(tag => {
+        const tagSpan = document.createElement('span');
+        tagSpan.className = 'tag';
+        tagSpan.textContent = tag;
+        tagSpan.addEventListener('click', function() {
+          filterTags.value = tag;
+          currentFilter = tag.toLowerCase();
+          filterNotes();
+        });
+        tagsDiv.appendChild(tagSpan);
+      });
+    }
+
     const noteActions = document.createElement('div');
     noteActions.className = 'note-actions';
 
@@ -71,6 +126,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     noteActions.appendChild(deleteBtn);
     noteDiv.appendChild(noteContent);
+    if (note.tags && note.tags.length > 0) {
+      noteDiv.appendChild(tagsDiv);
+    }
     noteDiv.appendChild(noteActions);
 
     return noteDiv;
@@ -81,7 +139,12 @@ document.addEventListener('DOMContentLoaded', function() {
       const notes = result.notes || [];
       const updatedNotes = notes.filter(note => note.id !== noteId);
       chrome.storage.local.set({ notes: updatedNotes }, function() {
-        displayNotes(updatedNotes);
+        allNotes = updatedNotes;
+        if (currentFilter) {
+          filterNotes();
+        } else {
+          displayNotes(updatedNotes);
+        }
       });
     });
   }

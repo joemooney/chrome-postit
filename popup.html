@@ -10,7 +10,12 @@
     <h1>Post-it Notes</h1>
     <div class="note-input">
       <textarea id="noteText" placeholder="Write your note here..."></textarea>
+      <input type="text" id="noteTags" placeholder="Tags (comma separated, e.g., work, important, todo)">
       <button id="addNote">Add Note</button>
+    </div>
+    <div class="filter-section">
+      <input type="text" id="filterTags" placeholder="Filter by tag...">
+      <button id="clearFilter">Clear</button>
     </div>
     <div id="notesList" class="notes-list"></div>
   </div>
