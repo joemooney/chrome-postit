@@ -1,0 +1,22 @@
+{
+  "manifest_version": 3,
+  "name": "Post-it Notes",
+  "version": "1.0",
+  "description": "Simple post-it notes for your browser",
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icon-16.png",
+      "48": "icon-48.png",
+      "128": "icon-128.png"
+    }
+  },
+  "permissions": [
+    "storage"
+  ],
+  "icons": {
+    "16": "icon-16.png",
+    "48": "icon-48.png",
+    "128": "icon-128.png"
+  }
+}
