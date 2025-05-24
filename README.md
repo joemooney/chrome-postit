@@ -4,7 +4,9 @@ A simple Chrome extension for creating and managing post-it notes directly in yo
 
 ## Features
 
-- Create yellow post-it style notes
+- Create yellow post-it style notes with tags
+- Add tags to organize notes (comma-separated)
+- Filter notes by clicking on tags or using the filter input
 - Notes persist using Chrome's local storage
 - Delete notes individually
 - Clean, minimal interface
@@ -18,7 +20,13 @@ A simple Chrome extension for creating and managing post-it notes directly in yo
 
 ## Usage
 
-Click the extension icon (yellow "P") in your Chrome toolbar to open the post-it interface. Type your note and press Enter or click "Add Note" to save it.
+1. Click the extension icon (yellow "P") in your Chrome toolbar to open the post-it interface
+2. Type your note in the text area
+3. Add tags in the tags field (comma-separated, e.g., "work, important, todo")
+4. Press Enter or click "Add Note" to save
+5. Click on any tag to filter notes by that tag
+6. Use the filter input to search for specific tags
+7. Click "Clear" to reset the filter and show all notes
 
 ## License
 
