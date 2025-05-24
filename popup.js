@@ -10,6 +10,7 @@ document.addEventListener('DOMContentLoaded', function() {
   let currentFilter = '';
 
   loadNotes();
+  getSelectedTextFromPage();
 
   addNoteBtn.addEventListener('click', function() {
     const text = noteText.value.trim();
@@ -146,6 +147,22 @@ document.addEventListener('DOMContentLoaded', function() {
           displayNotes(updatedNotes);
         }
       });
+    });
+  }
+
+  function getSelectedTextFromPage() {
+    chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
+      if (tabs[0] && tabs[0].id && !tabs[0].url.startsWith('chrome://')) {
+        chrome.scripting.executeScript({
+          target: { tabId: tabs[0].id },
+          func: () => window.getSelection().toString().trim()
+        }, (results) => {
+          if (results && results[0] && results[0].result) {
+            noteText.value = results[0].result;
+            noteText.focus();
+          }
+        });
+      }
     });
   }
 });
