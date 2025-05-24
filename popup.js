@@ -1,5 +1,7 @@
 document.addEventListener('DOMContentLoaded', function() {
+  const noteTitle = document.getElementById('noteTitle');
   const noteText = document.getElementById('noteText');
+  const noteUrl = document.getElementById('noteUrl');
   const noteTags = document.getElementById('noteTags');
   const addNoteBtn = document.getElementById('addNote');
   const notesList = document.getElementById('notesList');
@@ -11,12 +13,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
   loadNotes();
   getSelectedTextFromPage();
+  getCurrentPageUrl();
 
   addNoteBtn.addEventListener('click', function() {
+    const title = noteTitle.value.trim();
     const text = noteText.value.trim();
+    const url = noteUrl.value.trim();
     const tags = noteTags.value.trim();
     if (text) {
-      addNote(text, tags);
+      addNote(title, text, url, tags);
+      noteTitle.value = '';
       noteText.value = '';
       noteTags.value = '';
     }
@@ -40,13 +46,19 @@ document.addEventListener('DOMContentLoaded', function() {
     displayNotes(allNotes);
   });
 
-  function addNote(text, tags) {
+  function addNote(title, text, url, tags) {
     chrome.storage.local.get(['notes'], function(result) {
       const notes = result.notes || [];
       const tagArray = tags ? tags.split(',').map(tag => tag.trim()).filter(tag => tag) : [];
+      
+      // Generate title from text if not provided
+      const finalTitle = title || (text.length > 40 ? text.substring(0, 40) + '...' : text);
+      
       const newNote = {
         id: Date.now(),
+        title: finalTitle,
         text: text,
+        url: url,
         tags: tagArray,
         timestamp: new Date().toISOString()
       };
@@ -95,9 +107,30 @@ document.addEventListener('DOMContentLoaded', function() {
     noteDiv.className = 'note';
     noteDiv.dataset.id = note.id;
 
+    // Add title if exists
+    if (note.title) {
+      const noteTitle = document.createElement('div');
+      noteTitle.className = 'note-title';
+      noteTitle.textContent = note.title;
+      noteDiv.appendChild(noteTitle);
+    }
+
     const noteContent = document.createElement('div');
     noteContent.className = 'note-content';
     noteContent.textContent = note.text;
+
+    // Add URL if exists
+    if (note.url) {
+      const noteUrlDiv = document.createElement('div');
+      noteUrlDiv.className = 'note-url';
+      const urlLink = document.createElement('a');
+      urlLink.href = note.url;
+      urlLink.target = '_blank';
+      urlLink.textContent = new URL(note.url).hostname;
+      urlLink.title = note.url;
+      noteUrlDiv.appendChild(urlLink);
+      noteDiv.appendChild(noteUrlDiv);
+    }
 
     const tagsDiv = document.createElement('div');
     tagsDiv.className = 'note-tags';
@@ -162,6 +195,14 @@ document.addEventListener('DOMContentLoaded', function() {
             noteText.focus();
           }
         });
+      }
+    });
+  }
+
+  function getCurrentPageUrl() {
+    chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
+      if (tabs[0] && tabs[0].url) {
+        noteUrl.value = tabs[0].url;
       }
     });
   }

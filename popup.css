@@ -39,6 +39,39 @@ h1 {
   border-color: #4285f4;
 }
 
+#noteTitle {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  box-sizing: border-box;
+  font-family: inherit;
+}
+
+#noteTitle:focus {
+  outline: none;
+  border-color: #4285f4;
+}
+
+#noteUrl {
+  width: 100%;
+  padding: 10px 12px;
+  margin-top: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  box-sizing: border-box;
+  font-family: inherit;
+  background: #f9f9f9;
+  color: #666;
+}
+
+#noteUrl:focus {
+  outline: none;
+  border-color: #4285f4;
+}
+
 #noteTags {
   width: 100%;
   padding: 10px 12px;
@@ -209,4 +242,30 @@ h1 {
   background: #e0e0e0;
   color: #333;
   transform: translateY(-1px);
+}
+
+.note-title {
+  font-weight: 600;
+  font-size: 16px;
+  color: #333;
+  margin-bottom: 8px;
+  padding-right: 30px;
+  line-height: 1.3;
+}
+
+.note-url {
+  margin-top: 8px;
+  margin-bottom: 4px;
+  font-size: 12px;
+}
+
+.note-url a {
+  color: #4285f4;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.note-url a:hover {
+  color: #357abd;
+  text-decoration: underline;
 }

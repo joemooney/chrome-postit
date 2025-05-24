@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Post-it Notes",
-  "version": "1.0",
+  "version": "1.1",
   "description": "Simple post-it notes for your browser",
   "action": {
     "default_popup": "popup.html",
