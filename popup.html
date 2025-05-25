@@ -8,17 +8,56 @@
 <body>
   <div class="container">
     <h1>Post-it Notes</h1>
+    
+    <div class="tabs">
+      <button class="tab-button active" data-tab="simple">Simple</button>
+      <button class="tab-button" data-tab="details">Details</button>
+    </div>
+    
     <div class="note-input">
-      <input type="text" id="noteTitle" placeholder="Title (optional)">
-      <textarea id="noteText" placeholder="Write your note here..."></textarea>
-      <input type="text" id="noteUrl" placeholder="URL (auto-filled)" readonly>
-      <input type="text" id="noteTags" placeholder="Tags (comma separated, e.g., work, important, todo)">
+      <div class="tab-content active" id="simple-tab">
+        <input type="text" id="noteTitle" placeholder="Title (optional)">
+        <textarea id="noteText" placeholder="Write your note here..."></textarea>
+        <input type="text" id="noteTags" placeholder="Tags (comma separated, e.g., work, important, todo)">
+      </div>
+      
+      <div class="tab-content" id="details-tab">
+        <input type="text" id="noteTitle2" placeholder="Title (optional)">
+        <textarea id="noteText2" placeholder="Write your note here..."></textarea>
+        <input type="text" id="noteUrl" placeholder="URL (auto-filled)" readonly>
+        <input type="text" id="creationDate" placeholder="Creation Date" readonly>
+        <div class="field-row">
+          <select id="noteStatus">
+            <option value="open">Open</option>
+            <option value="working">Working</option>
+            <option value="closed">Closed</option>
+            <option value="archived">Archived</option>
+          </select>
+          <select id="notePriority">
+            <option value="low">Low</option>
+            <option value="medium" selected>Medium</option>
+            <option value="high">High</option>
+            <option value="critical">Critical</option>
+          </select>
+        </div>
+        <input type="text" id="noteTags2" placeholder="Tags (comma separated, e.g., work, important, todo)">
+      </div>
+      
       <button id="addNote">Add Note</button>
     </div>
+    
     <div class="filter-section">
       <input type="text" id="filterTags" placeholder="Filter by tag...">
+      <select id="filterStatus">
+        <option value="">All Status</option>
+        <option value="open">Open</option>
+        <option value="working">Working</option>
+        <option value="closed">Closed</option>
+        <option value="archived">Archived</option>
+      </select>
       <button id="clearFilter">Clear</button>
     </div>
+    
     <div id="notesList" class="notes-list"></div>
   </div>
   <script src="popup.js"></script>
