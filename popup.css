@@ -62,7 +62,7 @@ h1 {
   margin-bottom: 16px;
 }
 
-#noteText, #noteText2 {
+#noteText, #noteText2, #editNoteText {
   width: 100%;
   min-height: 80px;
   padding: 12px;
@@ -74,12 +74,12 @@ h1 {
   font-family: inherit;
 }
 
-#noteText:focus, #noteText2:focus {
+#noteText:focus, #noteText2:focus, #editNoteText:focus {
   outline: none;
   border-color: #4285f4;
 }
 
-#noteTitle, #noteTitle2 {
+#noteTitle, #noteTitle2, #editNoteTitle {
   width: 100%;
   padding: 10px 12px;
   border: 1px solid #ddd;
@@ -89,12 +89,12 @@ h1 {
   font-family: inherit;
 }
 
-#noteTitle:focus, #noteTitle2:focus {
+#noteTitle:focus, #noteTitle2:focus, #editNoteTitle:focus {
   outline: none;
   border-color: #4285f4;
 }
 
-#noteUrl, #creationDate {
+#noteUrl, #creationDate, #editNoteUrl, #editCreationDate {
   width: 100%;
   padding: 10px 12px;
   margin-top: 8px;
@@ -107,12 +107,12 @@ h1 {
   color: #666;
 }
 
-#noteUrl:focus, #creationDate:focus {
+#noteUrl:focus, #creationDate:focus, #editNoteUrl:focus, #editCreationDate:focus {
   outline: none;
   border-color: #4285f4;
 }
 
-#noteTags, #noteTags2 {
+#noteTags, #noteTags2, #editNoteTags {
   width: 100%;
   padding: 10px 12px;
   margin-top: 8px;
@@ -123,7 +123,7 @@ h1 {
   font-family: inherit;
 }
 
-#noteTags:focus, #noteTags2:focus {
+#noteTags:focus, #noteTags2:focus, #editNoteTags:focus {
   outline: none;
   border-color: #4285f4;
 }
@@ -134,7 +134,7 @@ h1 {
   margin-top: 8px;
 }
 
-#noteStatus, #notePriority {
+#noteStatus, #notePriority, #editNoteStatus, #editNotePriority {
   flex: 1;
   padding: 10px 12px;
   border: 1px solid #ddd;
@@ -146,7 +146,7 @@ h1 {
   cursor: pointer;
 }
 
-#noteStatus:focus, #notePriority:focus {
+#noteStatus:focus, #notePriority:focus, #editNoteStatus:focus, #editNotePriority:focus {
   outline: none;
   border-color: #4285f4;
 }
@@ -206,12 +206,14 @@ h1 {
   position: absolute;
   top: 8px;
   right: 8px;
+  display: flex;
+  gap: 4px;
 }
 
-.delete-btn {
+.edit-btn, .delete-btn {
   background: transparent;
   border: none;
-  font-size: 20px;
+  font-size: 18px;
   color: #666;
   cursor: pointer;
   padding: 0;
@@ -224,9 +226,54 @@ h1 {
   transition: background 0.2s;
 }
 
-.delete-btn:hover {
+.edit-btn:hover, .delete-btn:hover {
   background: rgba(0,0,0,0.1);
   color: #333;
+}
+
+.edit-mode {
+  margin-bottom: 16px;
+}
+
+.edit-mode h2 {
+  margin: 0;
+  font-size: 18px;
+  color: #666;
+}
+
+.edit-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.primary-btn, .secondary-btn {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.primary-btn {
+  background: #4285f4;
+  color: white;
+}
+
+.primary-btn:hover {
+  background: #357abd;
+}
+
+.secondary-btn {
+  background: #e0e0e0;
+  color: #333;
+}
+
+.secondary-btn:hover {
+  background: #d0d0d0;
 }
 
 ::-webkit-scrollbar {

@@ -9,10 +9,14 @@
   <div class="container">
     <h1>Post-it Notes</h1>
     
-    <div class="tabs">
+    <div class="tabs" id="mainTabs">
       <button class="tab-button active" data-tab="add">Add</button>
       <button class="tab-button" data-tab="add-plus">Add+</button>
       <button class="tab-button" data-tab="query">Query</button>
+    </div>
+    
+    <div class="edit-mode" id="editMode" style="display: none;">
+      <h2>Edit Note</h2>
     </div>
     
     <div class="tab-content active" id="add-tab">
@@ -60,6 +64,35 @@
           <option value="archived">Archived</option>
         </select>
         <button id="clearFilter">Clear</button>
+      </div>
+    </div>
+    
+    <div class="tab-content" id="edit-tab" style="display: none;">
+      <div class="note-input">
+        <input type="hidden" id="editNoteId">
+        <input type="text" id="editNoteTitle" placeholder="Title">
+        <textarea id="editNoteText" placeholder="Note content..."></textarea>
+        <input type="text" id="editNoteUrl" placeholder="URL">
+        <input type="text" id="editCreationDate" placeholder="Creation Date" readonly>
+        <div class="field-row">
+          <select id="editNoteStatus">
+            <option value="open">Open</option>
+            <option value="working">Working</option>
+            <option value="closed">Closed</option>
+            <option value="archived">Archived</option>
+          </select>
+          <select id="editNotePriority">
+            <option value="low">Low</option>
+            <option value="medium">Medium</option>
+            <option value="high">High</option>
+            <option value="critical">Critical</option>
+          </select>
+        </div>
+        <input type="text" id="editNoteTags" placeholder="Tags (separated by space, comma, or semicolon)">
+        <div class="edit-actions">
+          <button id="applyEdit" class="primary-btn">Apply</button>
+          <button id="cancelEdit" class="secondary-btn">Cancel</button>
+        </div>
       </div>
     </div>
     

@@ -17,13 +17,28 @@ document.addEventListener('DOMContentLoaded', function() {
   const notePriority = document.getElementById('notePriority');
   const noteTags2 = document.getElementById('noteTags2');
   
+  // Edit tab fields
+  const editNoteId = document.getElementById('editNoteId');
+  const editNoteTitle = document.getElementById('editNoteTitle');
+  const editNoteText = document.getElementById('editNoteText');
+  const editNoteUrl = document.getElementById('editNoteUrl');
+  const editCreationDate = document.getElementById('editCreationDate');
+  const editNoteStatus = document.getElementById('editNoteStatus');
+  const editNotePriority = document.getElementById('editNotePriority');
+  const editNoteTags = document.getElementById('editNoteTags');
+  
   // Other elements
   const addNoteBtn = document.getElementById('addNote');
   const addNoteBtn2 = document.getElementById('addNote2');
+  const applyEditBtn = document.getElementById('applyEdit');
+  const cancelEditBtn = document.getElementById('cancelEdit');
   const notesList = document.getElementById('notesList');
   const filterTags = document.getElementById('filterTags');
   const filterStatus = document.getElementById('filterStatus');
   const clearFilterBtn = document.getElementById('clearFilter');
+  const mainTabs = document.getElementById('mainTabs');
+  const editMode = document.getElementById('editMode');
+  const editTab = document.getElementById('edit-tab');
   
   let allNotes = [];
   let currentFilter = '';
@@ -322,13 +337,23 @@ document.addEventListener('DOMContentLoaded', function() {
     const noteActions = document.createElement('div');
     noteActions.className = 'note-actions';
 
+    const editBtn = document.createElement('button');
+    editBtn.className = 'edit-btn';
+    editBtn.innerHTML = '✎';
+    editBtn.title = 'Edit';
+    editBtn.addEventListener('click', function() {
+      editNote(note);
+    });
+
     const deleteBtn = document.createElement('button');
     deleteBtn.className = 'delete-btn';
     deleteBtn.textContent = '×';
+    deleteBtn.title = 'Delete';
     deleteBtn.addEventListener('click', function() {
       deleteNote(note.id);
     });
 
+    noteActions.appendChild(editBtn);
     noteActions.appendChild(deleteBtn);
     noteDiv.appendChild(noteContent);
     noteDiv.appendChild(metaDiv);
@@ -380,5 +405,85 @@ document.addEventListener('DOMContentLoaded', function() {
     const now = new Date();
     const dateStr = now.toLocaleDateString() + ' ' + now.toLocaleTimeString();
     creationDate.value = dateStr;
+  }
+
+  // Edit functionality
+  function editNote(note) {
+    // Show edit mode
+    mainTabs.style.display = 'none';
+    editMode.style.display = 'block';
+    
+    // Hide all tabs except edit
+    tabContents.forEach(content => content.style.display = 'none');
+    editTab.style.display = 'block';
+    
+    // Always show notes in edit mode (for context)
+    notesList.style.display = 'block';
+    
+    // Populate edit fields
+    editNoteId.value = note.id;
+    editNoteTitle.value = note.title || '';
+    editNoteText.value = note.text || '';
+    editNoteUrl.value = note.url || '';
+    editCreationDate.value = new Date(note.creationDate || note.timestamp).toLocaleDateString() + ' ' + 
+                            new Date(note.creationDate || note.timestamp).toLocaleTimeString();
+    editNoteStatus.value = note.status || 'open';
+    editNotePriority.value = note.priority || 'medium';
+    editNoteTags.value = note.tags ? note.tags.join(' ') : '';
+    
+    // Focus on text field
+    editNoteText.focus();
+  }
+
+  // Apply edit button
+  applyEditBtn.addEventListener('click', function() {
+    const noteId = parseInt(editNoteId.value);
+    const updatedNote = {
+      id: noteId,
+      title: editNoteTitle.value.trim() || (editNoteText.value.trim().length > 40 ? 
+              editNoteText.value.trim().substring(0, 40) + '...' : editNoteText.value.trim()),
+      text: editNoteText.value.trim(),
+      url: editNoteUrl.value.trim(),
+      tags: editNoteTags.value.trim() ? editNoteTags.value.trim().split(/[,;\s]+/).filter(tag => tag) : [],
+      status: editNoteStatus.value,
+      priority: editNotePriority.value,
+      creationDate: allNotes.find(n => n.id === noteId).creationDate,
+      timestamp: new Date().toISOString()
+    };
+    
+    // Update in storage
+    chrome.storage.local.get(['notes'], function(result) {
+      const notes = result.notes || [];
+      const index = notes.findIndex(n => n.id === noteId);
+      if (index !== -1) {
+        notes[index] = updatedNote;
+        chrome.storage.local.set({ notes: notes }, function() {
+          allNotes = notes;
+          exitEditMode();
+          filterNotes();
+        });
+      }
+    });
+  });
+
+  // Cancel edit button
+  cancelEditBtn.addEventListener('click', function() {
+    exitEditMode();
+  });
+
+  function exitEditMode() {
+    // Hide edit mode
+    mainTabs.style.display = 'flex';
+    editMode.style.display = 'none';
+    editTab.style.display = 'none';
+    
+    // Restore previous tab state
+    const queryTab = document.querySelector('[data-tab="query"]');
+    const queryContent = document.getElementById('query-tab');
+    queryTab.classList.add('active');
+    queryContent.style.display = 'block';
+    
+    // Keep notes visible since we're going to Query tab
+    notesList.style.display = 'block';
   }
 });
