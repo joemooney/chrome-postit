@@ -69,15 +69,23 @@ document.addEventListener('DOMContentLoaded', function() {
       // Save current tab before switching
       previousTab = activeTab;
       
-      // Switch to settings tab
-      tabButtons.forEach(btn => btn.classList.remove('active'));
+      // Hide all tab buttons except settings
+      tabButtons.forEach(btn => {
+        if (btn.dataset.tab === 'settings') {
+          btn.classList.add('active');
+          btn.style.display = 'inline-block';
+        } else {
+          btn.classList.remove('active');
+          btn.style.display = 'none';
+        }
+      });
+      
+      // Hide all tab contents except settings
       tabContents.forEach(content => {
         content.classList.remove('active');
         content.style.display = '';
       });
       
-      const settingsTabBtn = document.querySelector('[data-tab="settings"]');
-      settingsTabBtn.classList.add('active');
       settingsTab.classList.add('active');
       activeTab = 'settings';
     });
@@ -526,8 +534,13 @@ document.addEventListener('DOMContentLoaded', function() {
       setTimeout(() => {
         saveSettingsBtn.textContent = originalText;
         
+        // Show all tab buttons again
+        tabButtons.forEach(btn => {
+          btn.style.display = '';
+          btn.classList.remove('active');
+        });
+        
         // Switch back to previous tab
-        tabButtons.forEach(btn => btn.classList.remove('active'));
         tabContents.forEach(content => {
           content.classList.remove('active');
           // Remove inline styles to let CSS handle display

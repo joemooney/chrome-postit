@@ -94,14 +94,100 @@ This file documents the development process of the Chrome Post-it Notes extensio
 - Documented all development prompts
 - Provides complete development history
 
+## Sidebar Feature
+**Prompt:** "Please add button to the extension to pin the extension as a sidebar"
+
+- Added Chrome Side Panel API support
+- Created sidebar button (⎘) in popup header
+- Created sidepanel.html with adapted layout
+- Added background.js to handle side panel operations
+- Extension can now be used as persistent sidebar
+
+## Settings and Theme Feature
+**Prompt:** "I would like to add a configuration (settings) that has theme (light/dark), user's name, and user's nickname"
+
+- Added settings button (⚙) in header
+- Created Settings tab with theme toggle
+- Added user name and nickname fields
+- Implemented light/dark theme with CSS
+- Settings persist in Chrome storage
+- Dark theme applies to all UI elements
+
+## Settings Navigation Fix
+**Prompt:** "When I save settings I want the settings tab to stop being visible. You should instead navigate to the tab that was showing before the settings was clicked on."
+
+- Track previous tab before entering settings
+- Return to previous tab after saving
+- Show "Saved!" confirmation briefly
+- Improved navigation flow
+
+## Tab Display Bug Fix
+**Prompt:** "When I switch from settings tab to another tab, I still see settings fields"
+
+- Fixed tab visibility using CSS classes
+- Removed problematic inline display styles
+- Ensured proper tab switching behavior
+
+## Add+ Tab Styling Fix
+**Prompt:** "on Add+ tab, the "Add Note" button looks different than on the Add tab. Please fix."
+
+- Fixed button styling consistency
+- Ensured form styling matches across tabs
+- Corrected #addNote2 button styles
+
+## Dark Theme Dropdown Fix
+**Prompt:** "in Dark theme, the drop down menus on the Add+ tab show light theme coloring. Please correct."
+
+- Added dark theme styles for all select elements
+- Fixed dropdown background and text colors
+- Improved contrast in dark mode
+
+## Selected Text Fix
+**Prompt:** "The mouse selection is no longer being used to populate the description for a new note. Can you please restore that behavior."
+
+- Added error handling for chrome.scripting API
+- Added delay for page readiness
+- Only populate empty fields
+- Focus appropriate field based on active tab
+
+## Browser Tab View Feature
+**Prompt:** "Is it possible to click on a pop-out button such that the pop-up panel becomes expanded into its own new tab in the browser instead? If so, let's call this 'browser tab view' as opposed to 'pop-up view' mode, and 'sidebar view'."
+
+- Added "Open in new tab" button (⬚) in header
+- Created tab.html with full-page layout
+- Two-column design (sidebar for controls, main area for notes)
+- Responsive grid layout for notes display
+- All functionality available in tab view
+- Notes always visible for better overview
+
+## Default View Setting
+**Prompt:** "In the configuration settings, there should be a default view option of either 'browser tab', 'pop-up', or 'sidebar'. Then when you open the extension it should select the appropriate view."
+
+- Added "Default View" dropdown in settings
+- Options: Popup, Sidebar, Browser Tab
+- Removed default_popup from manifest.json
+- Implemented chrome.action.onClicked handler
+- Extension opens in configured default view
+- Settings available in all three views
+
+## Settings Tab Visibility Fix
+**Prompt:** "The Settings tab should not be visible after you click 'Save Settings'. Likewise, only the 'Settings' tab should be visible when you click on the settings configuration cog icon."
+
+- Hide all tab buttons except Settings when cog clicked
+- Show only Settings tab when in settings mode
+- Restore all tabs after saving settings
+- Consistent behavior in both popup and tab views
+
 ## Technical Summary
 
 The Chrome Post-it Notes extension evolved from a simple note-taking tool to a full-featured application with:
+- Multiple viewing modes (popup, sidebar, browser tab)
 - Multiple input modes (Add, Add+)
 - Advanced filtering (Query tab)
 - Full CRUD operations (Create, Read, Update, Delete)
 - Rich metadata (status, priority, dates)
 - Flexible tagging system
 - Context-aware features (URL capture, text selection)
+- Customizable settings (theme, default view, user info)
 
 Each iteration built upon the previous functionality while maintaining backward compatibility and a clean user interface.
