@@ -4,13 +4,12 @@
   "version": "1.5",
   "description": "Simple post-it notes for your browser",
   "action": {
-    "default_popup": "popup.html",
     "default_icon": {
       "16": "icon-16.png",
       "48": "icon-48.png",
       "128": "icon-128.png"
     },
-    "default_title": "Post-it Notes - Click for popup, or use button inside to open as sidebar"
+    "default_title": "Post-it Notes"
   },
   "permissions": [
     "storage",

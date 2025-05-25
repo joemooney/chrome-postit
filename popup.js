@@ -43,6 +43,7 @@ document.addEventListener('DOMContentLoaded', function() {
   // Settings elements
   const openSettingsBtn = document.getElementById('openSettings');
   const themeSelect = document.getElementById('themeSelect');
+  const defaultViewSelect = document.getElementById('defaultViewSelect');
   const userName = document.getElementById('userName');
   const userNickname = document.getElementById('userNickname');
   const saveSettingsBtn = document.getElementById('saveSettings');
@@ -588,6 +589,7 @@ document.addEventListener('DOMContentLoaded', function() {
     chrome.storage.local.get(['settings'], function(result) {
       const settings = result.settings || {
         theme: 'light',
+        defaultView: 'popup',
         userName: '',
         userNickname: ''
       };
@@ -597,6 +599,9 @@ document.addEventListener('DOMContentLoaded', function() {
         document.body.classList.add('dark-theme');
       }
       themeSelect.value = settings.theme;
+      
+      // Apply default view
+      defaultViewSelect.value = settings.defaultView || 'popup';
       
       // Apply user info
       userName.value = settings.userName || '';
@@ -608,6 +613,7 @@ document.addEventListener('DOMContentLoaded', function() {
   saveSettingsBtn.addEventListener('click', function() {
     const settings = {
       theme: themeSelect.value,
+      defaultView: defaultViewSelect.value,
       userName: userName.value.trim(),
       userNickname: userNickname.value.trim()
     };
