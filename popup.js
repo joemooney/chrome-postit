@@ -52,6 +52,7 @@ document.addEventListener('DOMContentLoaded', function() {
   let currentFilter = '';
   let currentStatusFilter = '';
   let activeTab = 'add';
+  let previousTab = 'add';
 
   loadNotes();
   loadSettings();
@@ -74,6 +75,9 @@ document.addEventListener('DOMContentLoaded', function() {
   // Handle settings button
   if (openSettingsBtn) {
     openSettingsBtn.addEventListener('click', function() {
+      // Save current tab before switching
+      previousTab = activeTab;
+      
       // Switch to settings tab
       tabButtons.forEach(btn => btn.classList.remove('active'));
       tabContents.forEach(content => content.classList.remove('active'));
@@ -81,6 +85,7 @@ document.addEventListener('DOMContentLoaded', function() {
       const settingsTabBtn = document.querySelector('[data-tab="settings"]');
       settingsTabBtn.classList.add('active');
       settingsTab.classList.add('active');
+      activeTab = 'settings';
       notesList.style.display = 'none';
     });
   }
@@ -89,6 +94,11 @@ document.addEventListener('DOMContentLoaded', function() {
   tabButtons.forEach(button => {
     button.addEventListener('click', function() {
       const targetTab = this.dataset.tab;
+      
+      // Save previous tab if we're not already in settings
+      if (activeTab !== 'settings' && targetTab === 'settings') {
+        previousTab = activeTab;
+      }
       
       // Update active states
       tabButtons.forEach(btn => btn.classList.remove('active'));
@@ -561,12 +571,35 @@ document.addEventListener('DOMContentLoaded', function() {
         document.body.classList.remove('dark-theme');
       }
       
-      // Show confirmation (optional - just change button text briefly)
+      // Show confirmation briefly
       const originalText = saveSettingsBtn.textContent;
       saveSettingsBtn.textContent = 'Saved!';
+      
+      // Return to previous tab after a short delay
       setTimeout(() => {
         saveSettingsBtn.textContent = originalText;
-      }, 1500);
+        
+        // Switch back to previous tab
+        tabButtons.forEach(btn => btn.classList.remove('active'));
+        tabContents.forEach(content => content.classList.remove('active'));
+        
+        const prevTabBtn = document.querySelector(`[data-tab="${previousTab}"]`);
+        const prevTabContent = document.getElementById(`${previousTab}-tab`);
+        
+        if (prevTabBtn && prevTabContent) {
+          prevTabBtn.classList.add('active');
+          prevTabContent.classList.add('active');
+          activeTab = previousTab;
+          
+          // Show notes if returning to query tab
+          if (previousTab === 'query') {
+            notesList.style.display = 'block';
+            filterNotes();
+          } else {
+            notesList.style.display = 'none';
+          }
+        }
+      }, 1000);
     });
   });
 
