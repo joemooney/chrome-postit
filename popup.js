@@ -80,7 +80,10 @@ document.addEventListener('DOMContentLoaded', function() {
       
       // Switch to settings tab
       tabButtons.forEach(btn => btn.classList.remove('active'));
-      tabContents.forEach(content => content.classList.remove('active'));
+      tabContents.forEach(content => {
+        content.classList.remove('active');
+        content.style.display = '';
+      });
       
       const settingsTabBtn = document.querySelector('[data-tab="settings"]');
       settingsTabBtn.classList.add('active');
@@ -102,10 +105,15 @@ document.addEventListener('DOMContentLoaded', function() {
       
       // Update active states
       tabButtons.forEach(btn => btn.classList.remove('active'));
-      tabContents.forEach(content => content.classList.remove('active'));
+      tabContents.forEach(content => {
+        content.classList.remove('active');
+        // Remove any inline display styles to let CSS take over
+        content.style.display = '';
+      });
       
       this.classList.add('active');
-      document.getElementById(`${targetTab}-tab`).classList.add('active');
+      const targetContent = document.getElementById(`${targetTab}-tab`);
+      targetContent.classList.add('active');
       
       activeTab = targetTab;
       
@@ -122,11 +130,6 @@ document.addEventListener('DOMContentLoaded', function() {
         filterNotes(); // Refresh the display when switching to query tab
       } else {
         notesList.style.display = 'none';
-      }
-      
-      // Hide settings tab normally (it uses standard tab switching)
-      if (targetTab === 'settings') {
-        settingsTab.style.display = 'block';
       }
     });
   });
@@ -581,7 +584,11 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Switch back to previous tab
         tabButtons.forEach(btn => btn.classList.remove('active'));
-        tabContents.forEach(content => content.classList.remove('active'));
+        tabContents.forEach(content => {
+          content.classList.remove('active');
+          // Remove inline styles to let CSS handle display
+          content.style.display = '';
+        });
         
         const prevTabBtn = document.querySelector(`[data-tab="${previousTab}"]`);
         const prevTabContent = document.getElementById(`${previousTab}-tab`);
