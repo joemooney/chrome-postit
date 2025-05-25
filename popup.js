@@ -62,7 +62,7 @@ document.addEventListener('DOMContentLoaded', function() {
   // Get selected text after a small delay to ensure page is ready
   setTimeout(() => {
     getSelectedTextFromPage();
-  }, 100);
+  }, 300);
   
   // Initially hide notes list since we start on Add tab
   notesList.style.display = 'none';
@@ -431,8 +431,18 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   function getSelectedTextFromPage() {
+    console.log('getSelectedTextFromPage called');
     chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
-      if (tabs[0] && tabs[0].id && tabs[0].url && !tabs[0].url.startsWith('chrome://')) {
+      console.log('Tabs query result:', tabs);
+      if (!tabs || tabs.length === 0) {
+        console.log('No active tabs found');
+        return;
+      }
+      if (tabs[0] && tabs[0].id && tabs[0].url && 
+          !tabs[0].url.startsWith('chrome://') && 
+          !tabs[0].url.startsWith('chrome-extension://') &&
+          !tabs[0].url.startsWith('about:')) {
+        console.log('Executing script on tab:', tabs[0].id);
         chrome.scripting.executeScript({
           target: { tabId: tabs[0].id },
           func: () => window.getSelection().toString().trim()
@@ -441,14 +451,18 @@ document.addEventListener('DOMContentLoaded', function() {
             console.error('Error getting selected text:', chrome.runtime.lastError);
             return;
           }
+          console.log('Script results:', results);
           if (results && results[0] && results[0].result) {
             const selectedText = results[0].result;
+            console.log('Selected text:', selectedText);
             // Only populate if fields are empty
             if (!noteText.value.trim()) {
               noteText.value = selectedText;
+              console.log('Set noteText.value to:', selectedText);
             }
             if (!noteText2.value.trim()) {
               noteText2.value = selectedText;
+              console.log('Set noteText2.value to:', selectedText);
             }
             // Focus on the appropriate field based on active tab
             if (activeTab === 'add') {
@@ -456,8 +470,12 @@ document.addEventListener('DOMContentLoaded', function() {
             } else if (activeTab === 'add-plus') {
               noteText2.focus();
             }
+          } else {
+            console.log('No selected text found');
           }
         });
+      } else {
+        console.log('Skipping script execution - tab URL is restricted or missing:', tabs[0]?.url);
       }
     });
   }
