@@ -57,6 +57,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   loadNotes();
   loadSettings();
+  checkContextMenuData();
   getCurrentPageUrl();
   setCurrentDate();
   
@@ -656,6 +657,67 @@ document.addEventListener('DOMContentLoaded', function() {
     setTimeout(() => {
       messageDiv.remove();
     }, 3000);
+  }
+
+  // Check if opened from context menu and handle accordingly
+  function checkContextMenuData() {
+    chrome.storage.local.get(['pendingNote', 'contextMenuTarget'], function(result) {
+      if (result.pendingNote) {
+        const noteData = result.pendingNote;
+        const targetView = result.contextMenuTarget || 'add';
+        
+        // Clear the pending note data
+        chrome.storage.local.remove(['pendingNote', 'contextMenuTarget']);
+        
+        // If we have selected text, populate the fields
+        if (noteData.selectedText) {
+          noteText.value = noteData.selectedText;
+          noteText2.value = noteData.selectedText;
+          
+          // Auto-generate title from page title or first 40 chars of selected text
+          const autoTitle = noteData.pageTitle || noteData.selectedText.substring(0, 40) + 
+                          (noteData.selectedText.length > 40 ? '...' : '');
+          noteTitle.value = autoTitle;
+          noteTitle2.value = autoTitle;
+        }
+        
+        // Override the URL with the page where right-click happened
+        if (noteData.pageUrl) {
+          noteUrl.value = noteData.pageUrl;
+        }
+        
+        // Switch to the appropriate tab
+        setTimeout(() => {
+          switchToTab(targetView);
+        }, 150);
+      }
+    });
+  }
+  
+  // Helper function to switch tabs
+  function switchToTab(tabName) {
+    tabButtons.forEach(btn => btn.classList.remove('active'));
+    tabContents.forEach(content => {
+      content.classList.remove('active');
+      content.style.display = '';
+    });
+    
+    const targetTabBtn = document.querySelector(`[data-tab="${tabName}"]`);
+    const targetTabContent = document.getElementById(`${tabName}-tab`);
+    
+    if (targetTabBtn && targetTabContent) {
+      targetTabBtn.classList.add('active');
+      targetTabContent.classList.add('active');
+      activeTab = tabName;
+      
+      // Show/hide notes list based on tab
+      if (tabName === 'query') {
+        notesList.style.display = 'block';
+        filterNotes();
+      } else {
+        notesList.style.display = 'none';
+      }
+    }
   }
 
   // Save settings

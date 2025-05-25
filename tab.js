@@ -58,6 +58,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   loadNotes();
   loadSettings();
+  checkContextMenuData();
   setCurrentDate();
   
   // Notes are always visible in tab view
@@ -588,4 +589,61 @@ document.addEventListener('DOMContentLoaded', function() {
       document.body.classList.remove('dark-theme');
     }
   });
+
+  // Check for context menu data
+  function checkContextMenuData() {
+    chrome.storage.local.get(['contextMenuData'], function(result) {
+      if (result.contextMenuData) {
+        const data = result.contextMenuData;
+        
+        // Populate the appropriate fields based on available data
+        if (data.selectedText || data.pageTitle || data.pageUrl) {
+          // If we have selected text, use the simple Add tab
+          if (data.selectedText) {
+            noteText.value = data.selectedText;
+            noteText2.value = data.selectedText;
+            if (data.pageTitle) {
+              noteTitle.value = data.pageTitle;
+              noteTitle2.value = data.pageTitle;
+            }
+            switchToTab('add');
+          } else {
+            // If we have URL or title but no selected text, use Add+ tab
+            if (data.pageTitle) {
+              noteTitle2.value = data.pageTitle;
+              noteTitle.value = data.pageTitle;
+            }
+            if (data.pageUrl) {
+              noteUrl.value = data.pageUrl;
+            }
+            switchToTab('add-plus');
+          }
+          
+          // Clear the stored data after using it
+          chrome.storage.local.remove('contextMenuData');
+        }
+      }
+    });
+  }
+
+  // Helper function to switch to a specific tab
+  function switchToTab(tabName) {
+    // Find the tab button and content
+    const tabButton = document.querySelector(`[data-tab="${tabName}"]`);
+    const tabContent = document.getElementById(`${tabName}-tab`);
+    
+    if (tabButton && tabContent) {
+      // Remove active class from all tabs
+      tabButtons.forEach(btn => btn.classList.remove('active'));
+      tabContents.forEach(content => {
+        content.classList.remove('active');
+        content.style.display = '';
+      });
+      
+      // Activate the target tab
+      tabButton.classList.add('active');
+      tabContent.classList.add('active');
+      activeTab = tabName;
+    }
+  }
 });
