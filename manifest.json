@@ -4,6 +4,7 @@
   "version": "1.5",
   "description": "Simple post-it notes for your browser",
   "action": {
+    "default_popup": "popup.html",
     "default_icon": {
       "16": "icon-16.png",
       "48": "icon-48.png",

@@ -57,6 +57,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   loadNotes();
   loadSettings();
+  checkDefaultView();
   getCurrentPageUrl();
   setCurrentDate();
   
@@ -614,6 +615,31 @@ document.addEventListener('DOMContentLoaded', function() {
       // Apply user info
       userName.value = settings.userName || '';
       userNickname.value = settings.userNickname || '';
+    });
+  }
+
+  // Check if we should redirect to a different view based on settings
+  function checkDefaultView() {
+    chrome.storage.local.get(['settings'], function(result) {
+      const settings = result.settings || {};
+      const defaultView = settings.defaultView || 'popup';
+      
+      // Only redirect if not already in popup view and default is not popup
+      if (defaultView !== 'popup') {
+        switch (defaultView) {
+          case 'sidebar':
+            // Open sidebar and close popup
+            chrome.runtime.sendMessage({ action: 'openSidePanel' });
+            window.close();
+            break;
+            
+          case 'browser-tab':
+            // Open in new tab and close popup
+            chrome.tabs.create({ url: 'tab.html' });
+            window.close();
+            break;
+        }
+      }
     });
   }
 
