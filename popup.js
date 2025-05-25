@@ -52,6 +52,15 @@ document.addEventListener('DOMContentLoaded', function() {
   
   // Initially hide notes list since we start on Add tab
   notesList.style.display = 'none';
+  
+  // Handle sidebar button
+  const openSidePanelBtn = document.getElementById('openSidePanel');
+  if (openSidePanelBtn) {
+    openSidePanelBtn.addEventListener('click', function() {
+      chrome.runtime.sendMessage({ action: 'openSidePanel' });
+      window.close(); // Close the popup
+    });
+  }
 
   // Tab switching
   tabButtons.forEach(button => {

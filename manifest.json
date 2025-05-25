@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Post-it Notes",
-  "version": "1.3",
+  "version": "1.4",
   "description": "Simple post-it notes for your browser",
   "action": {
     "default_popup": "popup.html",
@@ -9,13 +9,21 @@
       "16": "icon-16.png",
       "48": "icon-48.png",
       "128": "icon-128.png"
-    }
+    },
+    "default_title": "Post-it Notes - Click for popup, or use button inside to open as sidebar"
   },
   "permissions": [
     "storage",
     "activeTab",
-    "scripting"
+    "scripting",
+    "sidePanel"
   ],
+  "side_panel": {
+    "default_path": "sidepanel.html"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
   "icons": {
     "16": "icon-16.png",
     "48": "icon-48.png",
