@@ -176,7 +176,7 @@ h1 {
   border-color: #4285f4;
 }
 
-#addNote {
+#addNote, #addNote2 {
   width: 100%;
   padding: 10px;
   margin-top: 8px;
@@ -190,11 +190,11 @@ h1 {
   transition: background 0.2s;
 }
 
-#addNote:hover {
+#addNote:hover, #addNote2:hover {
   background: #357abd;
 }
 
-#addNote:active {
+#addNote:active, #addNote2:active {
   background: #2968a8;
 }
 
