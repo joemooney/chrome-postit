@@ -530,32 +530,53 @@ document.addEventListener('DOMContentLoaded', function() {
       const originalText = saveSettingsBtn.textContent;
       saveSettingsBtn.textContent = 'Saved!';
       
-      // Return to previous tab after a short delay
-      setTimeout(() => {
-        saveSettingsBtn.textContent = originalText;
-        
-        // Show all tab buttons again
-        tabButtons.forEach(btn => {
-          btn.style.display = '';
-          btn.classList.remove('active');
-        });
-        
-        // Switch back to previous tab
-        tabContents.forEach(content => {
-          content.classList.remove('active');
-          // Remove inline styles to let CSS handle display
-          content.style.display = '';
-        });
-        
-        const prevTabBtn = document.querySelector(`[data-tab="${previousTab}"]`);
-        const prevTabContent = document.getElementById(`${previousTab}-tab`);
-        
-        if (prevTabBtn && prevTabContent) {
-          prevTabBtn.classList.add('active');
-          prevTabContent.classList.add('active');
-          activeTab = previousTab;
-        }
-      }, 1000);
+      // Check if default view changed to a different view type
+      const currentView = 'browser-tab'; // We're in browser-tab view
+      if (settings.defaultView !== currentView) {
+        // Switch to the new default view after a short delay
+        setTimeout(() => {
+          switch (settings.defaultView) {
+            case 'sidebar':
+              chrome.runtime.sendMessage({ action: 'openSidePanel' });
+              window.close();
+              break;
+              
+            case 'popup':
+              // Close the current tab
+              chrome.tabs.getCurrent(function(tab) {
+                chrome.tabs.remove(tab.id);
+              });
+              break;
+          }
+        }, 500);
+      } else {
+        // Return to previous tab after a short delay
+        setTimeout(() => {
+          saveSettingsBtn.textContent = originalText;
+          
+          // Show all tab buttons again
+          tabButtons.forEach(btn => {
+            btn.style.display = '';
+            btn.classList.remove('active');
+          });
+          
+          // Switch back to previous tab
+          tabContents.forEach(content => {
+            content.classList.remove('active');
+            // Remove inline styles to let CSS handle display
+            content.style.display = '';
+          });
+          
+          const prevTabBtn = document.querySelector(`[data-tab="${previousTab}"]`);
+          const prevTabContent = document.getElementById(`${previousTab}-tab`);
+          
+          if (prevTabBtn && prevTabContent) {
+            prevTabBtn.classList.add('active');
+            prevTabContent.classList.add('active');
+            activeTab = previousTab;
+          }
+        }, 1000);
+      }
     });
   });
 

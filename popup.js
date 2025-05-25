@@ -664,40 +664,59 @@ document.addEventListener('DOMContentLoaded', function() {
       const originalText = saveSettingsBtn.textContent;
       saveSettingsBtn.textContent = 'Saved!';
       
-      // Return to previous tab after a short delay
-      setTimeout(() => {
-        saveSettingsBtn.textContent = originalText;
-        
-        // Show all tab buttons again
-        tabButtons.forEach(btn => {
-          btn.style.display = '';
-          btn.classList.remove('active');
-        });
-        
-        // Switch back to previous tab
-        tabContents.forEach(content => {
-          content.classList.remove('active');
-          // Remove inline styles to let CSS handle display
-          content.style.display = '';
-        });
-        
-        const prevTabBtn = document.querySelector(`[data-tab="${previousTab}"]`);
-        const prevTabContent = document.getElementById(`${previousTab}-tab`);
-        
-        if (prevTabBtn && prevTabContent) {
-          prevTabBtn.classList.add('active');
-          prevTabContent.classList.add('active');
-          activeTab = previousTab;
-          
-          // Show notes if returning to query tab
-          if (previousTab === 'query') {
-            notesList.style.display = 'block';
-            filterNotes();
-          } else {
-            notesList.style.display = 'none';
+      // Check if default view changed to a different view type
+      const currentView = 'popup'; // We're in popup view
+      if (settings.defaultView !== currentView) {
+        // Switch to the new default view after a short delay
+        setTimeout(() => {
+          switch (settings.defaultView) {
+            case 'sidebar':
+              chrome.runtime.sendMessage({ action: 'openSidePanel' });
+              window.close();
+              break;
+              
+            case 'browser-tab':
+              chrome.tabs.create({ url: 'tab.html' });
+              window.close();
+              break;
           }
-        }
-      }, 1000);
+        }, 500);
+      } else {
+        // Return to previous tab after a short delay
+        setTimeout(() => {
+          saveSettingsBtn.textContent = originalText;
+          
+          // Show all tab buttons again
+          tabButtons.forEach(btn => {
+            btn.style.display = '';
+            btn.classList.remove('active');
+          });
+          
+          // Switch back to previous tab
+          tabContents.forEach(content => {
+            content.classList.remove('active');
+            // Remove inline styles to let CSS handle display
+            content.style.display = '';
+          });
+          
+          const prevTabBtn = document.querySelector(`[data-tab="${previousTab}"]`);
+          const prevTabContent = document.getElementById(`${previousTab}-tab`);
+          
+          if (prevTabBtn && prevTabContent) {
+            prevTabBtn.classList.add('active');
+            prevTabContent.classList.add('active');
+            activeTab = previousTab;
+            
+            // Show notes if returning to query tab
+            if (previousTab === 'query') {
+              notesList.style.display = 'block';
+              filterNotes();
+            } else {
+              notesList.style.display = 'none';
+            }
+          }
+        }, 1000);
+      }
     });
   });
 
