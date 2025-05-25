@@ -1,62 +1,92 @@
+/* Base styles for full tab view */
 body {
-  width: 350px;
-  min-height: 400px;
   margin: 0;
   padding: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
   background: #f5f5f5;
+  height: 100vh;
+  overflow: hidden;
 }
 
-.container {
-  padding: 16px;
+.tab-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
 }
 
 .header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  margin-bottom: 12px;
+  justify-content: center;
+  padding: 16px 24px;
+  background: white;
+  border-bottom: 1px solid #e0e0e0;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  position: relative;
 }
 
 h1 {
   margin: 0;
-  font-size: 20px;
+  font-size: 24px;
   color: #333;
-  flex: 1;
-  text-align: center;
 }
 
-.settings-btn, .sidebar-btn, .tab-btn {
+.settings-btn {
+  position: absolute;
+  left: 24px;
   background: transparent;
   border: 1px solid #ddd;
   border-radius: 4px;
-  padding: 4px 8px;
-  font-size: 16px;
+  padding: 8px 12px;
+  font-size: 18px;
   color: #666;
   cursor: pointer;
   transition: all 0.2s;
 }
 
-.settings-btn:hover, .sidebar-btn:hover, .tab-btn:hover {
+.settings-btn:hover {
   background: #f0f0f0;
   border-color: #4285f4;
   color: #4285f4;
 }
 
+.main-content {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.sidebar {
+  width: 400px;
+  background: white;
+  border-right: 1px solid #e0e0e0;
+  padding: 24px;
+  overflow-y: auto;
+  box-shadow: 2px 0 4px rgba(0,0,0,0.05);
+}
+
+.notes-section {
+  flex: 1;
+  padding: 24px;
+  overflow-y: auto;
+  background: #f9f9f9;
+}
+
+/* Tabs */
 .tabs {
   display: flex;
-  gap: 4px;
-  margin-bottom: 16px;
+  gap: 8px;
+  margin-bottom: 24px;
   border-bottom: 2px solid #e0e0e0;
 }
 
 .tab-button {
   flex: 1;
-  padding: 8px 12px;
+  padding: 10px 16px;
   background: transparent;
   border: none;
   border-bottom: 2px solid transparent;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 500;
   color: #666;
   cursor: pointer;
@@ -83,13 +113,14 @@ h1 {
   display: block;
 }
 
+/* Form elements */
 .note-input {
   margin-bottom: 16px;
 }
 
 #noteText, #noteText2, #editNoteText {
   width: 100%;
-  min-height: 80px;
+  min-height: 120px;
   padding: 12px;
   border: 1px solid #ddd;
   border-radius: 4px;
@@ -112,6 +143,7 @@ h1 {
   font-size: 14px;
   box-sizing: border-box;
   font-family: inherit;
+  margin-bottom: 12px;
 }
 
 #noteTitle:focus, #noteTitle2:focus, #editNoteTitle:focus {
@@ -122,7 +154,7 @@ h1 {
 #noteUrl, #creationDate, #editNoteUrl, #editCreationDate {
   width: 100%;
   padding: 10px 12px;
-  margin-top: 8px;
+  margin-top: 12px;
   border: 1px solid #ddd;
   border-radius: 4px;
   font-size: 14px;
@@ -132,15 +164,10 @@ h1 {
   color: #666;
 }
 
-#noteUrl:focus, #creationDate:focus, #editNoteUrl:focus, #editCreationDate:focus {
-  outline: none;
-  border-color: #4285f4;
-}
-
 #noteTags, #noteTags2, #editNoteTags {
   width: 100%;
   padding: 10px 12px;
-  margin-top: 8px;
+  margin-top: 12px;
   border: 1px solid #ddd;
   border-radius: 4px;
   font-size: 14px;
@@ -155,8 +182,8 @@ h1 {
 
 .field-row {
   display: flex;
-  gap: 8px;
-  margin-top: 8px;
+  gap: 12px;
+  margin-top: 12px;
 }
 
 #noteStatus, #notePriority, #editNoteStatus, #editNotePriority {
@@ -171,20 +198,15 @@ h1 {
   cursor: pointer;
 }
 
-#noteStatus:focus, #notePriority:focus, #editNoteStatus:focus, #editNotePriority:focus {
-  outline: none;
-  border-color: #4285f4;
-}
-
 #addNote, #addNote2 {
   width: 100%;
-  padding: 10px;
-  margin-top: 8px;
+  padding: 12px;
+  margin-top: 12px;
   background: #4285f4;
   color: white;
   border: none;
   border-radius: 4px;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 500;
   cursor: pointer;
   transition: background 0.2s;
@@ -194,56 +216,63 @@ h1 {
   background: #357abd;
 }
 
-#addNote:active, #addNote2:active {
-  background: #2968a8;
-}
-
+/* Notes display */
 .notes-list {
-  max-height: 300px;
-  overflow-y: auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
 }
 
 .note {
   background: #fff8b3;
   border: 1px solid #f5e79e;
-  border-radius: 4px;
-  padding: 12px;
-  margin-bottom: 8px;
+  border-radius: 8px;
+  padding: 16px;
   position: relative;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  transition: transform 0.2s;
+  transition: transform 0.2s, box-shadow 0.2s;
+  min-height: 150px;
 }
 
 .note:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.note-title {
+  font-weight: 600;
+  font-size: 16px;
+  color: #333;
+  margin-bottom: 12px;
+  padding-right: 50px;
+  line-height: 1.3;
 }
 
 .note-content {
-  padding-right: 30px;
   word-break: break-word;
   white-space: pre-wrap;
   font-size: 14px;
   color: #333;
+  margin-bottom: 12px;
 }
 
 .note-actions {
   position: absolute;
-  top: 8px;
-  right: 8px;
+  top: 12px;
+  right: 12px;
   display: flex;
-  gap: 4px;
+  gap: 8px;
 }
 
 .edit-btn, .delete-btn {
   background: transparent;
   border: none;
-  font-size: 18px;
+  font-size: 20px;
   color: #666;
   cursor: pointer;
   padding: 0;
-  width: 24px;
-  height: 24px;
+  width: 32px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -256,159 +285,10 @@ h1 {
   color: #333;
 }
 
-.edit-mode {
-  margin-bottom: 16px;
-}
-
-.edit-mode h2 {
-  margin: 0;
-  font-size: 18px;
-  color: #666;
-}
-
-.edit-actions {
-  display: flex;
-  gap: 8px;
-  margin-top: 12px;
-}
-
-.primary-btn, .secondary-btn {
-  flex: 1;
-  padding: 10px;
-  border: none;
-  border-radius: 4px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.primary-btn {
-  background: #4285f4;
-  color: white;
-}
-
-.primary-btn:hover {
-  background: #357abd;
-}
-
-.secondary-btn {
-  background: #e0e0e0;
-  color: #333;
-}
-
-.secondary-btn:hover {
-  background: #d0d0d0;
-}
-
-::-webkit-scrollbar {
-  width: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #888;
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #666;
-}
-
-.filter-section {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 12px;
-}
-
-#filterTags {
-  flex: 2;
-  padding: 8px 12px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 14px;
-  box-sizing: border-box;
-  font-family: inherit;
-}
-
-#filterTags:focus {
-  outline: none;
-  border-color: #4285f4;
-}
-
-#filterStatus {
-  flex: 1;
-  padding: 8px 12px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 14px;
-  box-sizing: border-box;
-  font-family: inherit;
-  background: white;
-  cursor: pointer;
-}
-
-#filterStatus:focus {
-  outline: none;
-  border-color: #4285f4;
-}
-
-#clearFilter {
-  padding: 8px 16px;
-  background: #e0e0e0;
-  color: #333;
-  border: none;
-  border-radius: 4px;
-  font-size: 14px;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-#clearFilter:hover {
-  background: #d0d0d0;
-}
-
-.note-tags {
-  margin-top: 8px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.tag {
-  display: inline-block;
-  padding: 3px 8px;
-  background: #f0f0f0;
-  color: #666;
-  border-radius: 12px;
-  font-size: 12px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.tag:hover {
-  background: #e0e0e0;
-  color: #333;
-  transform: translateY(-1px);
-}
-
-.note-title {
-  font-weight: 600;
-  font-size: 16px;
-  color: #333;
-  margin-bottom: 8px;
-  padding-right: 30px;
-  line-height: 1.3;
-}
-
 .note-url {
   margin-top: 8px;
   margin-bottom: 4px;
-  font-size: 12px;
+  font-size: 13px;
 }
 
 .note-url a {
@@ -426,7 +306,7 @@ h1 {
   display: flex;
   gap: 12px;
   margin-top: 8px;
-  font-size: 11px;
+  font-size: 12px;
   color: #666;
 }
 
@@ -442,6 +322,30 @@ h1 {
 .meta-priority {
   font-weight: 500;
   text-transform: capitalize;
+}
+
+.note-tags {
+  margin-top: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tag {
+  display: inline-block;
+  padding: 4px 10px;
+  background: #f0f0f0;
+  color: #666;
+  border-radius: 14px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.tag:hover {
+  background: #e0e0e0;
+  color: #333;
+  transform: translateY(-1px);
 }
 
 /* Status colors */
@@ -479,14 +383,114 @@ h1 {
   color: #34a853;
 }
 
-/* Settings Styles */
+/* Filter section */
+.filter-section {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+#filterTags {
+  flex: 2;
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  box-sizing: border-box;
+  font-family: inherit;
+}
+
+#filterTags:focus {
+  outline: none;
+  border-color: #4285f4;
+}
+
+#filterStatus {
+  flex: 1;
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  box-sizing: border-box;
+  font-family: inherit;
+  background: white;
+  cursor: pointer;
+}
+
+#filterStatus:focus {
+  outline: none;
+  border-color: #4285f4;
+}
+
+#clearFilter {
+  padding: 10px 20px;
+  background: #e0e0e0;
+  color: #333;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+#clearFilter:hover {
+  background: #d0d0d0;
+}
+
+/* Edit mode */
+.edit-mode {
+  margin-bottom: 24px;
+}
+
+.edit-mode h2 {
+  margin: 0;
+  font-size: 20px;
+  color: #666;
+}
+
+.edit-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.primary-btn, .secondary-btn {
+  flex: 1;
+  padding: 12px;
+  border: none;
+  border-radius: 4px;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.primary-btn {
+  background: #4285f4;
+  color: white;
+}
+
+.primary-btn:hover {
+  background: #357abd;
+}
+
+.secondary-btn {
+  background: #e0e0e0;
+  color: #333;
+}
+
+.secondary-btn:hover {
+  background: #d0d0d0;
+}
+
+/* Settings */
 .settings-section {
   padding: 8px 0;
 }
 
 .settings-section h3 {
-  margin: 16px 0 8px 0;
-  font-size: 16px;
+  margin: 20px 0 12px 0;
+  font-size: 18px;
   color: #666;
   font-weight: 500;
 }
@@ -498,23 +502,23 @@ h1 {
 .setting-item {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 12px;
+  gap: 16px;
+  margin-bottom: 16px;
 }
 
 .setting-item label {
-  min-width: 80px;
-  font-size: 14px;
+  min-width: 100px;
+  font-size: 15px;
   color: #666;
 }
 
 .setting-item input,
 .setting-item select {
   flex: 1;
-  padding: 8px 12px;
+  padding: 10px 12px;
   border: 1px solid #ddd;
   border-radius: 4px;
-  font-size: 14px;
+  font-size: 15px;
   box-sizing: border-box;
   font-family: inherit;
 }
@@ -526,8 +530,28 @@ h1 {
 }
 
 #saveSettings {
-  margin-top: 16px;
+  margin-top: 20px;
   width: 100%;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #666;
 }
 
 /* Dark Theme */
@@ -536,8 +560,13 @@ body.dark-theme {
   color: #e0e0e0;
 }
 
-body.dark-theme .container {
+body.dark-theme .tab-container {
   background: #1a1a1a;
+}
+
+body.dark-theme .header {
+  background: #2a2a2a;
+  border-bottom-color: #444;
 }
 
 body.dark-theme h1,
@@ -547,16 +576,12 @@ body.dark-theme h3 {
 }
 
 body.dark-theme .settings-btn,
-body.dark-theme .sidebar-btn,
-body.dark-theme .tab-btn,
 body.dark-theme .tab-button {
   color: #e0e0e0;
   border-color: #444;
 }
 
 body.dark-theme .settings-btn:hover,
-body.dark-theme .sidebar-btn:hover,
-body.dark-theme .tab-btn:hover,
 body.dark-theme .tab-button:hover {
   background: #333;
   border-color: #4285f4;
@@ -568,31 +593,31 @@ body.dark-theme .tab-button.active {
   border-bottom-color: #4285f4;
 }
 
+body.dark-theme .sidebar {
+  background: #2a2a2a;
+  border-right-color: #444;
+}
+
+body.dark-theme .notes-section {
+  background: #1a1a1a;
+}
+
 body.dark-theme input,
 body.dark-theme textarea,
 body.dark-theme select {
-  background: #2a2a2a;
+  background: #333;
   color: #e0e0e0;
-  border-color: #444;
+  border-color: #555;
 }
 
-/* Specific overrides for dropdowns */
 body.dark-theme #noteStatus,
 body.dark-theme #notePriority,
 body.dark-theme #editNoteStatus,
 body.dark-theme #editNotePriority,
 body.dark-theme #filterStatus {
-  background: #2a2a2a;
+  background: #333;
   color: #e0e0e0;
-  border-color: #444;
-}
-
-body.dark-theme #noteStatus:focus,
-body.dark-theme #notePriority:focus,
-body.dark-theme #editNoteStatus:focus,
-body.dark-theme #editNotePriority:focus,
-body.dark-theme #filterStatus:focus {
-  border-color: #4285f4;
+  border-color: #555;
 }
 
 body.dark-theme input[readonly],
@@ -605,22 +630,30 @@ body.dark-theme #editCreationDate {
 }
 
 body.dark-theme .note {
-  background: #2a2a2a;
-  border-color: #444;
+  background: #333;
+  border-color: #555;
   box-shadow: 0 2px 4px rgba(0,0,0,0.3);
 }
 
 body.dark-theme .note:hover {
-  box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+}
+
+body.dark-theme .note-title {
+  color: #e0e0e0;
+}
+
+body.dark-theme .note-content {
+  color: #ccc;
 }
 
 body.dark-theme .tag {
-  background: #333;
+  background: #444;
   color: #e0e0e0;
 }
 
 body.dark-theme .tag:hover {
-  background: #444;
+  background: #555;
 }
 
 body.dark-theme .edit-btn,
@@ -660,14 +693,6 @@ body.dark-theme #clearFilter:hover {
 }
 
 body.dark-theme .setting-item label {
-  color: #ccc;
-}
-
-body.dark-theme .note-title {
-  color: #e0e0e0;
-}
-
-body.dark-theme .note-content {
   color: #ccc;
 }
 

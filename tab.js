@@ -1,3 +1,4 @@
+// Tab view JavaScript - reuses most of the popup.js logic with adjustments for full page display
 document.addEventListener('DOMContentLoaded', function() {
   // Tab elements
   const tabButtons = document.querySelectorAll('.tab-button');
@@ -56,34 +57,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
   loadNotes();
   loadSettings();
-  getCurrentPageUrl();
   setCurrentDate();
   
-  // Get selected text after a small delay to ensure page is ready
-  setTimeout(() => {
-    getSelectedTextFromPage();
-  }, 300);
-  
-  // Initially hide notes list since we start on Add tab
-  notesList.style.display = 'none';
-  
-  // Handle sidebar button
-  const openSidePanelBtn = document.getElementById('openSidePanel');
-  if (openSidePanelBtn) {
-    openSidePanelBtn.addEventListener('click', function() {
-      chrome.runtime.sendMessage({ action: 'openSidePanel' });
-      window.close(); // Close the popup
-    });
-  }
-  
-  // Handle open in tab button
-  const openTabBtn = document.getElementById('openTab');
-  if (openTabBtn) {
-    openTabBtn.addEventListener('click', function() {
-      chrome.tabs.create({ url: 'tab.html' });
-      window.close(); // Close the popup
-    });
-  }
+  // Notes are always visible in tab view
+  notesList.style.display = 'grid';
   
   // Handle settings button
   if (openSettingsBtn) {
@@ -102,7 +79,6 @@ document.addEventListener('DOMContentLoaded', function() {
       settingsTabBtn.classList.add('active');
       settingsTab.classList.add('active');
       activeTab = 'settings';
-      notesList.style.display = 'none';
     });
   }
 
@@ -135,14 +111,6 @@ document.addEventListener('DOMContentLoaded', function() {
         syncFields('add-plus');
       } else if (targetTab === 'add' && activeTab !== 'query') {
         syncFields('add');
-      }
-      
-      // Show/hide notes list based on active tab
-      if (targetTab === 'query') {
-        notesList.style.display = 'block';
-        filterNotes(); // Refresh the display when switching to query tab
-      } else {
-        notesList.style.display = 'none';
       }
     });
   });
@@ -212,7 +180,7 @@ document.addEventListener('DOMContentLoaded', function() {
     noteTags2.value = '';
     noteStatus.value = 'open';
     notePriority.value = 'medium';
-    getCurrentPageUrl();
+    noteUrl.value = '';
     setCurrentDate();
   }
 
@@ -377,18 +345,6 @@ document.addEventListener('DOMContentLoaded', function() {
         tagSpan.className = 'tag';
         tagSpan.textContent = tag;
         tagSpan.addEventListener('click', function() {
-          // Switch to Query tab and set filter
-          tabButtons.forEach(btn => btn.classList.remove('active'));
-          tabContents.forEach(content => content.classList.remove('active'));
-          
-          const queryTab = document.querySelector('[data-tab="query"]');
-          const queryContent = document.getElementById('query-tab');
-          queryTab.classList.add('active');
-          queryContent.classList.add('active');
-          
-          activeTab = 'query';
-          notesList.style.display = 'block';
-          
           filterTags.value = tag;
           currentFilter = tag.toLowerCase();
           filterNotes();
@@ -439,64 +395,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
-  function getSelectedTextFromPage() {
-    console.log('getSelectedTextFromPage called');
-    chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
-      console.log('Tabs query result:', tabs);
-      if (!tabs || tabs.length === 0) {
-        console.log('No active tabs found');
-        return;
-      }
-      if (tabs[0] && tabs[0].id && tabs[0].url && 
-          !tabs[0].url.startsWith('chrome://') && 
-          !tabs[0].url.startsWith('chrome-extension://') &&
-          !tabs[0].url.startsWith('about:')) {
-        console.log('Executing script on tab:', tabs[0].id);
-        chrome.scripting.executeScript({
-          target: { tabId: tabs[0].id },
-          func: () => window.getSelection().toString().trim()
-        }, (results) => {
-          if (chrome.runtime.lastError) {
-            console.error('Error getting selected text:', chrome.runtime.lastError);
-            return;
-          }
-          console.log('Script results:', results);
-          if (results && results[0] && results[0].result) {
-            const selectedText = results[0].result;
-            console.log('Selected text:', selectedText);
-            // Only populate if fields are empty
-            if (!noteText.value.trim()) {
-              noteText.value = selectedText;
-              console.log('Set noteText.value to:', selectedText);
-            }
-            if (!noteText2.value.trim()) {
-              noteText2.value = selectedText;
-              console.log('Set noteText2.value to:', selectedText);
-            }
-            // Focus on the appropriate field based on active tab
-            if (activeTab === 'add') {
-              noteText.focus();
-            } else if (activeTab === 'add-plus') {
-              noteText2.focus();
-            }
-          } else {
-            console.log('No selected text found');
-          }
-        });
-      } else {
-        console.log('Skipping script execution - tab URL is restricted or missing:', tabs[0]?.url);
-      }
-    });
-  }
-
-  function getCurrentPageUrl() {
-    chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
-      if (tabs[0] && tabs[0].url) {
-        noteUrl.value = tabs[0].url;
-      }
-    });
-  }
-
   function setCurrentDate() {
     const now = new Date();
     const dateStr = now.toLocaleDateString() + ' ' + now.toLocaleTimeString();
@@ -512,9 +410,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // Hide all tabs except edit
     tabContents.forEach(content => content.style.display = 'none');
     editTab.style.display = 'block';
-    
-    // Always show notes in edit mode (for context)
-    notesList.style.display = 'block';
     
     // Populate edit fields
     editNoteId.value = note.id;
@@ -578,9 +473,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const queryContent = document.getElementById('query-tab');
     queryTab.classList.add('active');
     queryContent.style.display = 'block';
-    
-    // Keep notes visible since we're going to Query tab
-    notesList.style.display = 'block';
   }
 
   // Settings functionality
@@ -643,14 +535,6 @@ document.addEventListener('DOMContentLoaded', function() {
           prevTabBtn.classList.add('active');
           prevTabContent.classList.add('active');
           activeTab = previousTab;
-          
-          // Show notes if returning to query tab
-          if (previousTab === 'query') {
-            notesList.style.display = 'block';
-            filterNotes();
-          } else {
-            notesList.style.display = 'none';
-          }
         }
       }, 1000);
     });
