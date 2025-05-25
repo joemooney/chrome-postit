@@ -178,6 +178,17 @@ This file documents the development process of the Chrome Post-it Notes extensio
 - Restore all tabs after saving settings
 - Consistent behavior in both popup and tab views
 
+## Sidebar Opening Limitation
+**Issue:** "The current behavior, when I changed to sidebar view and saved settings, now when I click on the extension icon the popup view momentarily appears and disappears, with no sidebar view presented"
+
+**Error:** "Error opening side panel: Error: `sidePanel.open()` may only be called in response to a user gesture."
+
+- Chrome's Side Panel API requires user interaction
+- Cannot automatically open sidebar when extension icon clicked
+- Solution: Show message prompting user to click sidebar button
+- Browser tab view still works as default (can auto-open)
+- Popup remains the most reliable default view
+
 ## Technical Summary
 
 The Chrome Post-it Notes extension evolved from a simple note-taking tool to a full-featured application with:
@@ -191,3 +202,5 @@ The Chrome Post-it Notes extension evolved from a simple note-taking tool to a f
 - Customizable settings (theme, default view, user info)
 
 Each iteration built upon the previous functionality while maintaining backward compatibility and a clean user interface.
+
+Note: Due to Chrome API restrictions, the sidebar view cannot be set as a true default view - it requires user interaction to open.

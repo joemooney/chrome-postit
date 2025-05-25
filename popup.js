@@ -618,11 +618,9 @@ document.addEventListener('DOMContentLoaded', function() {
       if (defaultView !== 'popup') {
         switch (defaultView) {
           case 'sidebar':
-            // Open sidebar and close popup after a small delay
-            chrome.runtime.sendMessage({ action: 'openSidePanel' });
-            setTimeout(() => {
-              window.close();
-            }, 100);
+            // Can't auto-open sidebar due to Chrome restrictions
+            // Show a message instead
+            showSidebarMessage();
             break;
             
           case 'browser-tab':
@@ -633,6 +631,31 @@ document.addEventListener('DOMContentLoaded', function() {
         }
       }
     });
+  }
+  
+  // Show message when sidebar is the default but can't auto-open
+  function showSidebarMessage() {
+    const messageDiv = document.createElement('div');
+    messageDiv.style.cssText = `
+      position: fixed;
+      top: 50px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #4285f4;
+      color: white;
+      padding: 12px 20px;
+      border-radius: 4px;
+      font-size: 14px;
+      z-index: 1000;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    `;
+    messageDiv.textContent = 'Click the sidebar button (⎘) to open in sidebar view';
+    document.body.appendChild(messageDiv);
+    
+    // Remove message after 3 seconds
+    setTimeout(() => {
+      messageDiv.remove();
+    }, 3000);
   }
 
   // Save settings
@@ -663,10 +686,36 @@ document.addEventListener('DOMContentLoaded', function() {
         setTimeout(() => {
           switch (settings.defaultView) {
             case 'sidebar':
-              chrome.runtime.sendMessage({ action: 'openSidePanel' });
-              setTimeout(() => {
-                window.close();
-              }, 100);
+              // Can't auto-open sidebar, just show the popup with a message
+              saveSettingsBtn.textContent = originalText;
+              showSidebarMessage();
+              
+              // Return to previous tab UI
+              tabButtons.forEach(btn => {
+                btn.style.display = '';
+                btn.classList.remove('active');
+              });
+              
+              tabContents.forEach(content => {
+                content.classList.remove('active');
+                content.style.display = '';
+              });
+              
+              const prevTabBtn = document.querySelector(`[data-tab="${previousTab}"]`);
+              const prevTabContent = document.getElementById(`${previousTab}-tab`);
+              
+              if (prevTabBtn && prevTabContent) {
+                prevTabBtn.classList.add('active');
+                prevTabContent.classList.add('active');
+                activeTab = previousTab;
+                
+                if (previousTab === 'query') {
+                  notesList.style.display = 'block';
+                  filterNotes();
+                } else {
+                  notesList.style.display = 'none';
+                }
+              }
               break;
               
             case 'browser-tab':
