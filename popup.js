@@ -40,12 +40,21 @@ document.addEventListener('DOMContentLoaded', function() {
   const editMode = document.getElementById('editMode');
   const editTab = document.getElementById('edit-tab');
   
+  // Settings elements
+  const openSettingsBtn = document.getElementById('openSettings');
+  const themeSelect = document.getElementById('themeSelect');
+  const userName = document.getElementById('userName');
+  const userNickname = document.getElementById('userNickname');
+  const saveSettingsBtn = document.getElementById('saveSettings');
+  const settingsTab = document.getElementById('settings-tab');
+  
   let allNotes = [];
   let currentFilter = '';
   let currentStatusFilter = '';
   let activeTab = 'add';
 
   loadNotes();
+  loadSettings();
   getSelectedTextFromPage();
   getCurrentPageUrl();
   setCurrentDate();
@@ -59,6 +68,20 @@ document.addEventListener('DOMContentLoaded', function() {
     openSidePanelBtn.addEventListener('click', function() {
       chrome.runtime.sendMessage({ action: 'openSidePanel' });
       window.close(); // Close the popup
+    });
+  }
+  
+  // Handle settings button
+  if (openSettingsBtn) {
+    openSettingsBtn.addEventListener('click', function() {
+      // Switch to settings tab
+      tabButtons.forEach(btn => btn.classList.remove('active'));
+      tabContents.forEach(content => content.classList.remove('active'));
+      
+      const settingsTabBtn = document.querySelector('[data-tab="settings"]');
+      settingsTabBtn.classList.add('active');
+      settingsTab.classList.add('active');
+      notesList.style.display = 'none';
     });
   }
 
@@ -89,6 +112,11 @@ document.addEventListener('DOMContentLoaded', function() {
         filterNotes(); // Refresh the display when switching to query tab
       } else {
         notesList.style.display = 'none';
+      }
+      
+      // Hide settings tab normally (it uses standard tab switching)
+      if (targetTab === 'settings') {
+        settingsTab.style.display = 'block';
       }
     });
   });
@@ -495,4 +523,59 @@ document.addEventListener('DOMContentLoaded', function() {
     // Keep notes visible since we're going to Query tab
     notesList.style.display = 'block';
   }
+
+  // Settings functionality
+  function loadSettings() {
+    chrome.storage.local.get(['settings'], function(result) {
+      const settings = result.settings || {
+        theme: 'light',
+        userName: '',
+        userNickname: ''
+      };
+      
+      // Apply theme
+      if (settings.theme === 'dark') {
+        document.body.classList.add('dark-theme');
+      }
+      themeSelect.value = settings.theme;
+      
+      // Apply user info
+      userName.value = settings.userName || '';
+      userNickname.value = settings.userNickname || '';
+    });
+  }
+
+  // Save settings
+  saveSettingsBtn.addEventListener('click', function() {
+    const settings = {
+      theme: themeSelect.value,
+      userName: userName.value.trim(),
+      userNickname: userNickname.value.trim()
+    };
+    
+    chrome.storage.local.set({ settings: settings }, function() {
+      // Apply theme immediately
+      if (settings.theme === 'dark') {
+        document.body.classList.add('dark-theme');
+      } else {
+        document.body.classList.remove('dark-theme');
+      }
+      
+      // Show confirmation (optional - just change button text briefly)
+      const originalText = saveSettingsBtn.textContent;
+      saveSettingsBtn.textContent = 'Saved!';
+      setTimeout(() => {
+        saveSettingsBtn.textContent = originalText;
+      }, 1500);
+    });
+  });
+
+  // Theme change handler for immediate preview
+  themeSelect.addEventListener('change', function() {
+    if (themeSelect.value === 'dark') {
+      document.body.classList.add('dark-theme');
+    } else {
+      document.body.classList.remove('dark-theme');
+    }
+  });
 });

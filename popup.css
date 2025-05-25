@@ -26,7 +26,7 @@ h1 {
   text-align: center;
 }
 
-.sidebar-btn {
+.settings-btn, .sidebar-btn {
   background: transparent;
   border: 1px solid #ddd;
   border-radius: 4px;
@@ -37,7 +37,7 @@ h1 {
   transition: all 0.2s;
 }
 
-.sidebar-btn:hover {
+.settings-btn:hover, .sidebar-btn:hover {
   background: #f0f0f0;
   border-color: #4285f4;
   color: #4285f4;
@@ -477,4 +477,183 @@ h1 {
 
 .priority-low .meta-priority {
   color: #34a853;
+}
+
+/* Settings Styles */
+.settings-section {
+  padding: 8px 0;
+}
+
+.settings-section h3 {
+  margin: 16px 0 8px 0;
+  font-size: 16px;
+  color: #666;
+  font-weight: 500;
+}
+
+.settings-section h3:first-child {
+  margin-top: 0;
+}
+
+.setting-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.setting-item label {
+  min-width: 80px;
+  font-size: 14px;
+  color: #666;
+}
+
+.setting-item input,
+.setting-item select {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  box-sizing: border-box;
+  font-family: inherit;
+}
+
+.setting-item input:focus,
+.setting-item select:focus {
+  outline: none;
+  border-color: #4285f4;
+}
+
+#saveSettings {
+  margin-top: 16px;
+  width: 100%;
+}
+
+/* Dark Theme */
+body.dark-theme {
+  background: #1a1a1a;
+  color: #e0e0e0;
+}
+
+body.dark-theme .container {
+  background: #1a1a1a;
+}
+
+body.dark-theme h1,
+body.dark-theme h2,
+body.dark-theme h3 {
+  color: #e0e0e0;
+}
+
+body.dark-theme .settings-btn,
+body.dark-theme .sidebar-btn,
+body.dark-theme .tab-button {
+  color: #e0e0e0;
+  border-color: #444;
+}
+
+body.dark-theme .settings-btn:hover,
+body.dark-theme .sidebar-btn:hover,
+body.dark-theme .tab-button:hover {
+  background: #333;
+  border-color: #4285f4;
+  color: #4285f4;
+}
+
+body.dark-theme .tab-button.active {
+  color: #4285f4;
+  border-bottom-color: #4285f4;
+}
+
+body.dark-theme input,
+body.dark-theme textarea,
+body.dark-theme select {
+  background: #2a2a2a;
+  color: #e0e0e0;
+  border-color: #444;
+}
+
+body.dark-theme input[readonly],
+body.dark-theme #noteUrl,
+body.dark-theme #creationDate,
+body.dark-theme #editNoteUrl,
+body.dark-theme #editCreationDate {
+  background: #222;
+  color: #aaa;
+}
+
+body.dark-theme .note {
+  background: #2a2a2a;
+  border-color: #444;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+body.dark-theme .note:hover {
+  box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+}
+
+body.dark-theme .tag {
+  background: #333;
+  color: #e0e0e0;
+}
+
+body.dark-theme .tag:hover {
+  background: #444;
+}
+
+body.dark-theme .edit-btn,
+body.dark-theme .delete-btn {
+  color: #e0e0e0;
+}
+
+body.dark-theme .edit-btn:hover,
+body.dark-theme .delete-btn:hover {
+  background: rgba(255,255,255,0.1);
+}
+
+body.dark-theme .primary-btn {
+  background: #357abd;
+}
+
+body.dark-theme .primary-btn:hover {
+  background: #4285f4;
+}
+
+body.dark-theme .secondary-btn {
+  background: #444;
+  color: #e0e0e0;
+}
+
+body.dark-theme .secondary-btn:hover {
+  background: #555;
+}
+
+body.dark-theme #clearFilter {
+  background: #444;
+  color: #e0e0e0;
+}
+
+body.dark-theme #clearFilter:hover {
+  background: #555;
+}
+
+body.dark-theme .setting-item label {
+  color: #ccc;
+}
+
+body.dark-theme .note-title {
+  color: #e0e0e0;
+}
+
+body.dark-theme .note-content {
+  color: #ccc;
+}
+
+body.dark-theme .meta-date {
+  color: #888;
+}
+
+body.dark-theme .tabs {
+  border-bottom-color: #444;
 }

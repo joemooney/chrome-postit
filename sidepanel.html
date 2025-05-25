@@ -24,12 +24,17 @@
 </head>
 <body>
   <div class="container">
-    <h1>Post-it Notes</h1>
+    <div class="header">
+      <button id="openSettings" class="settings-btn" title="Settings">⚙</button>
+      <h1>Post-it Notes</h1>
+      <div style="width: 32px;"></div>
+    </div>
     
     <div class="tabs" id="mainTabs">
       <button class="tab-button active" data-tab="add">Add</button>
       <button class="tab-button" data-tab="add-plus">Add+</button>
       <button class="tab-button" data-tab="query">Query</button>
+      <button class="tab-button" data-tab="settings">Settings</button>
     </div>
     
     <div class="edit-mode" id="editMode" style="display: none;">
@@ -81,6 +86,31 @@
           <option value="archived">Archived</option>
         </select>
         <button id="clearFilter">Clear</button>
+      </div>
+    </div>
+    
+    <div class="tab-content" id="settings-tab">
+      <div class="settings-section">
+        <h3>Appearance</h3>
+        <div class="setting-item">
+          <label for="themeSelect">Theme:</label>
+          <select id="themeSelect">
+            <option value="light">Light</option>
+            <option value="dark">Dark</option>
+          </select>
+        </div>
+        
+        <h3>User Information</h3>
+        <div class="setting-item">
+          <label for="userName">Name:</label>
+          <input type="text" id="userName" placeholder="Your name">
+        </div>
+        <div class="setting-item">
+          <label for="userNickname">Nickname:</label>
+          <input type="text" id="userNickname" placeholder="Your nickname">
+        </div>
+        
+        <button id="saveSettings" class="primary-btn">Save Settings</button>
       </div>
     </div>
     
