@@ -173,7 +173,8 @@ document.addEventListener('DOMContentLoaded', function() {
   function addNote(title, text, url, tags, status, priority, date) {
     chrome.storage.local.get(['notes'], function(result) {
       const notes = result.notes || [];
-      const tagArray = tags ? tags.split(',').map(tag => tag.trim()).filter(tag => tag) : [];
+      // Split by comma, semicolon, or whitespace
+      const tagArray = tags ? tags.split(/[,;\s]+/).map(tag => tag.trim()).filter(tag => tag) : [];
       
       // Generate title from text if not provided
       const finalTitle = title || (text.length > 40 ? text.substring(0, 40) + '...' : text);
