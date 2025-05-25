@@ -432,7 +432,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   function getSelectedTextFromPage() {
     chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
-      if (tabs[0] && tabs[0].id && !tabs[0].url.startsWith('chrome://')) {
+      if (tabs[0] && tabs[0].id && tabs[0].url && !tabs[0].url.startsWith('chrome://')) {
         chrome.scripting.executeScript({
           target: { tabId: tabs[0].id },
           func: () => window.getSelection().toString().trim()
