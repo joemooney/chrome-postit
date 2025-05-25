@@ -34,6 +34,9 @@ document.addEventListener('DOMContentLoaded', function() {
   getSelectedTextFromPage();
   getCurrentPageUrl();
   setCurrentDate();
+  
+  // Initially hide notes list since we start on Add tab
+  notesList.style.display = 'none';
 
   // Tab switching
   tabButtons.forEach(button => {
@@ -54,6 +57,14 @@ document.addEventListener('DOMContentLoaded', function() {
         syncFields('add-plus');
       } else if (targetTab === 'add' && activeTab !== 'query') {
         syncFields('add');
+      }
+      
+      // Show/hide notes list based on active tab
+      if (targetTab === 'query') {
+        notesList.style.display = 'block';
+        filterNotes(); // Refresh the display when switching to query tab
+      } else {
+        notesList.style.display = 'none';
       }
     });
   });
@@ -295,6 +306,9 @@ document.addEventListener('DOMContentLoaded', function() {
           const queryContent = document.getElementById('query-tab');
           queryTab.classList.add('active');
           queryContent.classList.add('active');
+          
+          activeTab = 'query';
+          notesList.style.display = 'block';
           
           filterTags.value = tag;
           currentFilter = tag.toLowerCase();
