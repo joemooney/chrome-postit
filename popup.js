@@ -618,9 +618,11 @@ document.addEventListener('DOMContentLoaded', function() {
       if (defaultView !== 'popup') {
         switch (defaultView) {
           case 'sidebar':
-            // Open sidebar and close popup
+            // Open sidebar and close popup after a small delay
             chrome.runtime.sendMessage({ action: 'openSidePanel' });
-            window.close();
+            setTimeout(() => {
+              window.close();
+            }, 100);
             break;
             
           case 'browser-tab':
@@ -662,7 +664,9 @@ document.addEventListener('DOMContentLoaded', function() {
           switch (settings.defaultView) {
             case 'sidebar':
               chrome.runtime.sendMessage({ action: 'openSidePanel' });
-              window.close();
+              setTimeout(() => {
+                window.close();
+              }, 100);
               break;
               
             case 'browser-tab':
