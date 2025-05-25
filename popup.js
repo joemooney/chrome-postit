@@ -56,9 +56,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
   loadNotes();
   loadSettings();
-  getSelectedTextFromPage();
   getCurrentPageUrl();
   setCurrentDate();
+  
+  // Get selected text after a small delay to ensure page is ready
+  setTimeout(() => {
+    getSelectedTextFromPage();
+  }, 100);
   
   // Initially hide notes list since we start on Add tab
   notesList.style.display = 'none';
@@ -433,10 +437,25 @@ document.addEventListener('DOMContentLoaded', function() {
           target: { tabId: tabs[0].id },
           func: () => window.getSelection().toString().trim()
         }, (results) => {
+          if (chrome.runtime.lastError) {
+            console.error('Error getting selected text:', chrome.runtime.lastError);
+            return;
+          }
           if (results && results[0] && results[0].result) {
-            noteText.value = results[0].result;
-            noteText2.value = results[0].result;
-            noteText.focus();
+            const selectedText = results[0].result;
+            // Only populate if fields are empty
+            if (!noteText.value.trim()) {
+              noteText.value = selectedText;
+            }
+            if (!noteText2.value.trim()) {
+              noteText2.value = selectedText;
+            }
+            // Focus on the appropriate field based on active tab
+            if (activeTab === 'add') {
+              noteText.focus();
+            } else if (activeTab === 'add-plus') {
+              noteText2.focus();
+            }
           }
         });
       }
