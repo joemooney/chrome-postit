@@ -10,18 +10,22 @@
     <h1>Post-it Notes</h1>
     
     <div class="tabs">
-      <button class="tab-button active" data-tab="simple">Simple</button>
-      <button class="tab-button" data-tab="details">Details</button>
+      <button class="tab-button active" data-tab="add">Add</button>
+      <button class="tab-button" data-tab="add-plus">Add+</button>
+      <button class="tab-button" data-tab="query">Query</button>
     </div>
     
-    <div class="note-input">
-      <div class="tab-content active" id="simple-tab">
+    <div class="tab-content active" id="add-tab">
+      <div class="note-input">
         <input type="text" id="noteTitle" placeholder="Title (optional)">
         <textarea id="noteText" placeholder="Write your note here..."></textarea>
         <input type="text" id="noteTags" placeholder="Tags (comma separated, e.g., work, important, todo)">
+        <button id="addNote">Add Note</button>
       </div>
-      
-      <div class="tab-content" id="details-tab">
+    </div>
+    
+    <div class="tab-content" id="add-plus-tab">
+      <div class="note-input">
         <input type="text" id="noteTitle2" placeholder="Title (optional)">
         <textarea id="noteText2" placeholder="Write your note here..."></textarea>
         <input type="text" id="noteUrl" placeholder="URL (auto-filled)" readonly>
@@ -41,21 +45,22 @@
           </select>
         </div>
         <input type="text" id="noteTags2" placeholder="Tags (comma separated, e.g., work, important, todo)">
+        <button id="addNote2">Add Note</button>
       </div>
-      
-      <button id="addNote">Add Note</button>
     </div>
     
-    <div class="filter-section">
-      <input type="text" id="filterTags" placeholder="Filter by tag...">
-      <select id="filterStatus">
-        <option value="">All Status</option>
-        <option value="open">Open</option>
-        <option value="working">Working</option>
-        <option value="closed">Closed</option>
-        <option value="archived">Archived</option>
-      </select>
-      <button id="clearFilter">Clear</button>
+    <div class="tab-content" id="query-tab">
+      <div class="filter-section">
+        <input type="text" id="filterTags" placeholder="Filter by tag...">
+        <select id="filterStatus">
+          <option value="">All Status</option>
+          <option value="open">Open</option>
+          <option value="working">Working</option>
+          <option value="closed">Closed</option>
+          <option value="archived">Archived</option>
+        </select>
+        <button id="clearFilter">Clear</button>
+      </div>
     </div>
     
     <div id="notesList" class="notes-list"></div>

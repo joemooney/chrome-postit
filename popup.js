@@ -3,12 +3,12 @@ document.addEventListener('DOMContentLoaded', function() {
   const tabButtons = document.querySelectorAll('.tab-button');
   const tabContents = document.querySelectorAll('.tab-content');
   
-  // Simple tab fields
+  // Add tab fields
   const noteTitle = document.getElementById('noteTitle');
   const noteText = document.getElementById('noteText');
   const noteTags = document.getElementById('noteTags');
   
-  // Details tab fields
+  // Add+ tab fields
   const noteTitle2 = document.getElementById('noteTitle2');
   const noteText2 = document.getElementById('noteText2');
   const noteUrl = document.getElementById('noteUrl');
@@ -19,6 +19,7 @@ document.addEventListener('DOMContentLoaded', function() {
   
   // Other elements
   const addNoteBtn = document.getElementById('addNote');
+  const addNoteBtn2 = document.getElementById('addNote2');
   const notesList = document.getElementById('notesList');
   const filterTags = document.getElementById('filterTags');
   const filterStatus = document.getElementById('filterStatus');
@@ -27,7 +28,7 @@ document.addEventListener('DOMContentLoaded', function() {
   let allNotes = [];
   let currentFilter = '';
   let currentStatusFilter = '';
-  let activeTab = 'simple';
+  let activeTab = 'add';
 
   loadNotes();
   getSelectedTextFromPage();
@@ -47,17 +48,23 @@ document.addEventListener('DOMContentLoaded', function() {
       document.getElementById(`${targetTab}-tab`).classList.add('active');
       
       activeTab = targetTab;
-      syncFields(targetTab);
+      
+      // Only sync between Add and Add+ tabs
+      if (targetTab === 'add-plus' && activeTab !== 'query') {
+        syncFields('add-plus');
+      } else if (targetTab === 'add' && activeTab !== 'query') {
+        syncFields('add');
+      }
     });
   });
 
   // Sync fields between tabs
   function syncFields(toTab) {
-    if (toTab === 'details') {
+    if (toTab === 'add-plus') {
       noteTitle2.value = noteTitle.value;
       noteText2.value = noteText.value;
       noteTags2.value = noteTags.value;
-    } else {
+    } else if (toTab === 'add') {
       noteTitle.value = noteTitle2.value;
       noteText.value = noteText2.value;
       noteTags.value = noteTags2.value;
@@ -72,10 +79,29 @@ document.addEventListener('DOMContentLoaded', function() {
   noteText2.addEventListener('input', () => noteText.value = noteText2.value);
   noteTags2.addEventListener('input', () => noteTags.value = noteTags2.value);
 
+  // Add note from Add tab
   addNoteBtn.addEventListener('click', function() {
-    const title = activeTab === 'simple' ? noteTitle.value.trim() : noteTitle2.value.trim();
-    const text = activeTab === 'simple' ? noteText.value.trim() : noteText2.value.trim();
-    const tags = activeTab === 'simple' ? noteTags.value.trim() : noteTags2.value.trim();
+    const title = noteTitle.value.trim();
+    const text = noteText.value.trim();
+    const tags = noteTags.value.trim();
+    
+    if (text) {
+      // Use default values from Add+ tab
+      const url = noteUrl.value.trim();
+      const status = 'open';
+      const priority = 'medium';
+      const date = new Date().toISOString();
+      
+      addNote(title, text, url, tags, status, priority, date);
+      clearForm();
+    }
+  });
+
+  // Add note from Add+ tab
+  addNoteBtn2.addEventListener('click', function() {
+    const title = noteTitle2.value.trim();
+    const text = noteText2.value.trim();
+    const tags = noteTags2.value.trim();
     
     if (text) {
       const url = noteUrl.value.trim();
@@ -105,6 +131,13 @@ document.addEventListener('DOMContentLoaded', function() {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       addNoteBtn.click();
+    }
+  });
+
+  noteText2.addEventListener('keypress', function(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      addNoteBtn2.click();
     }
   });
 
@@ -254,6 +287,15 @@ document.addEventListener('DOMContentLoaded', function() {
         tagSpan.className = 'tag';
         tagSpan.textContent = tag;
         tagSpan.addEventListener('click', function() {
+          // Switch to Query tab and set filter
+          tabButtons.forEach(btn => btn.classList.remove('active'));
+          tabContents.forEach(content => content.classList.remove('active'));
+          
+          const queryTab = document.querySelector('[data-tab="query"]');
+          const queryContent = document.getElementById('query-tab');
+          queryTab.classList.add('active');
+          queryContent.classList.add('active');
+          
           filterTags.value = tag;
           currentFilter = tag.toLowerCase();
           filterNotes();
