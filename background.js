@@ -17,6 +17,22 @@ async function findAndSwitchToPostItTab() {
   return false;
 }
 
+// Check if sidebar is open
+async function isSidebarOpen() {
+  try {
+    // Get the current window
+    const window = await chrome.windows.getCurrent();
+    // Try to get sidebar info - this is a workaround since Chrome doesn't have direct API
+    // We'll check if sidepanel.html is loaded in any tab/frame
+    const tabs = await chrome.tabs.query({});
+    return tabs.some(tab => 
+      tab.url && tab.url.includes(chrome.runtime.getURL('sidepanel.html'))
+    );
+  } catch (error) {
+    return false;
+  }
+}
+
 // Create context menu on installation
 chrome.runtime.onInstalled.addListener(() => {
   chrome.contextMenus.create({
@@ -36,7 +52,22 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
   };
   
   chrome.storage.local.set({ pendingNote: noteData }, async () => {
-    // First check if Post-it is already open in a tab
+    // First check if sidebar is open
+    const sidebarCheck = await new Promise((resolve) => {
+      chrome.runtime.sendMessage({ action: 'ping' }, (response) => {
+        resolve(response && response.source === 'sidebar');
+      });
+    });
+    
+    if (sidebarCheck) {
+      // If sidebar is open, switch to appropriate tab
+      const targetView = info.selectionText ? 'add' : 'query';
+      chrome.storage.local.set({ contextMenuTarget: targetView });
+      chrome.runtime.sendMessage({ action: 'switchToTab', tab: targetView });
+      return;
+    }
+    
+    // Then check if Post-it is already open in a tab
     const foundTab = await findAndSwitchToPostItTab();
     if (foundTab) {
       // If we found a tab, just store the target view and let the tab handle it
@@ -97,5 +128,19 @@ chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
     const found = await findAndSwitchToPostItTab();
     sendResponse({ found: found });
     return true; // Keep message channel open for async response
+  } else if (request.action === 'checkForSidebar') {
+    // Check if we can communicate with the sidebar
+    try {
+      // Send a message to all extension views
+      chrome.runtime.sendMessage({ action: 'ping' }, (response) => {
+        sendResponse({ sidebarOpen: response && response.source === 'sidebar' });
+      });
+    } catch (error) {
+      sendResponse({ sidebarOpen: false });
+    }
+    return true;
+  } else if (request.action === 'switchToAddTab') {
+    // Broadcast to all extension views to switch to Add tab
+    chrome.runtime.sendMessage({ action: 'switchToTab', tab: 'add' });
   }
 });

@@ -583,35 +583,45 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Check if we should redirect to a different view based on settings
   function checkDefaultView() {
-    // First check if there's already a browser tab open
-    chrome.runtime.sendMessage({ action: 'checkForExistingTab' }, (response) => {
-      if (response && response.found) {
-        // If found, close the popup
+    // First check if sidebar is open
+    chrome.runtime.sendMessage({ action: 'checkForSidebar' }, (response) => {
+      if (response && response.sidebarOpen) {
+        // Switch sidebar to Add tab and close popup
+        chrome.runtime.sendMessage({ action: 'switchToAddTab' });
         window.close();
         return;
       }
       
-      // Otherwise, check default view settings
-      chrome.storage.local.get(['settings'], function(result) {
-        const settings = result.settings || {};
-        const defaultView = settings.defaultView || 'popup';
-        
-        // Only redirect if not already in popup view and default is not popup
-        if (defaultView !== 'popup') {
-          switch (defaultView) {
-            case 'sidebar':
-              // Can't auto-open sidebar due to Chrome restrictions
-              // Show a message instead
-              showSidebarMessage();
-              break;
-              
-            case 'browser-tab':
-              // Open in new tab and close popup
-              chrome.tabs.create({ url: 'tab.html' });
-              window.close();
-              break;
-          }
+      // Then check if there's already a browser tab open
+      chrome.runtime.sendMessage({ action: 'checkForExistingTab' }, (response) => {
+        if (response && response.found) {
+          // If found, close the popup
+          window.close();
+          return;
         }
+        
+        // Otherwise, check default view settings
+        chrome.storage.local.get(['settings'], function(result) {
+          const settings = result.settings || {};
+          const defaultView = settings.defaultView || 'popup';
+          
+          // Only redirect if not already in popup view and default is not popup
+          if (defaultView !== 'popup') {
+            switch (defaultView) {
+              case 'sidebar':
+                // Can't auto-open sidebar due to Chrome restrictions
+                // Show a message instead
+                showSidebarMessage();
+                break;
+                
+              case 'browser-tab':
+                // Open in new tab and close popup
+                chrome.tabs.create({ url: 'tab.html' });
+                window.close();
+                break;
+            }
+          }
+        });
       });
     });
   }
@@ -921,5 +931,29 @@ document.addEventListener('DOMContentLoaded', function() {
       dbClient = null;
       updateDbStatus('disconnected', 'No database URL configured');
     }
+  });
+
+  // Listen for messages from background script
+  chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    // Check if we're in the sidebar
+    const isSidebar = window.location.href.includes('sidepanel.html');
+    
+    if (request.action === 'ping') {
+      // Respond to ping to identify as sidebar
+      if (isSidebar) {
+        sendResponse({ source: 'sidebar' });
+      }
+    } else if (request.action === 'switchToTab' && isSidebar) {
+      // Switch to requested tab
+      switchToTab(request.tab);
+      // Also handle context menu data if switching to add
+      if (request.tab === 'add') {
+        checkContextMenuData();
+      }
+    } else if (request.action === 'handleContextMenu' && isSidebar) {
+      // Handle context menu data in sidebar
+      checkContextMenuData();
+    }
+    return true;
   });
 });
