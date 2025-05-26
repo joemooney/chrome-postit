@@ -102,6 +102,13 @@
           <input type="text" id="userNickname" placeholder="Your nickname">
         </div>
         
+        <h3>Database Sync</h3>
+        <div class="setting-item">
+          <label for="databaseUrl">Database URL:</label>
+          <input type="text" id="databaseUrl" placeholder="Optional: gRPC server URL">
+        </div>
+        <div class="db-status" id="dbStatus"></div>
+        
         <button id="saveSettings" class="primary-btn">Save Settings</button>
       </div>
     </div>
@@ -137,6 +144,7 @@
     
     <div id="notesList" class="notes-list"></div>
   </div>
+  <script type="module" src="database.js"></script>
   <script src="popup.js"></script>
 </body>
 </html>

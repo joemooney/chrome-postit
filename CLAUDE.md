@@ -214,3 +214,15 @@ Note: Due to Chrome API restrictions, the sidebar view cannot be set as a true d
 - Added double-click on title to edit note functionality
 - Added hover effect on titles to indicate clickability
 - Applied changes to all view modes
+
+## Database Integration
+**Prompt:** "In the settings I want an optional database URL. This is a GRPC server where we can add, update, delete, query our postit notes. The database will automatically assign a note_id sequence number as a unique primary key for notes. The database on the backend is generic in nature and accepts requests for different databases and schemas. The file 'db.proto' is the protobuf file for the database. PostIt.schema is a schema representation of our particular schema."
+
+- Added optional database URL field in settings
+- Created database.js module for gRPC-Web communication
+- Implemented CRUD operations (Create, Read, Update, Delete)
+- Added automatic sync when notes are added/deleted
+- Database ID tracking for local notes
+- Connection status indicator in settings
+- Support for tags through junction table
+- Works across all view modes (popup, sidebar, browser tab)

@@ -760,3 +760,52 @@ body.dark-theme .toggle-details-btn:hover {
 body.dark-theme .details-section {
   border-top-color: #444;
 }
+
+/* Database status */
+.db-status {
+  margin-top: 8px;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 13px;
+  text-align: center;
+  display: none;
+}
+
+.db-status.connected {
+  display: block;
+  background: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+.db-status.disconnected {
+  display: block;
+  background: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+
+.db-status.connecting {
+  display: block;
+  background: #fff3cd;
+  color: #856404;
+  border: 1px solid #ffeaa7;
+}
+
+body.dark-theme .db-status.connected {
+  background: #1e4620;
+  color: #d4edda;
+  border-color: #34a853;
+}
+
+body.dark-theme .db-status.disconnected {
+  background: #4a1c1c;
+  color: #f8d7da;
+  border-color: #ea4335;
+}
+
+body.dark-theme .db-status.connecting {
+  background: #4a3c1c;
+  color: #fff3cd;
+  border-color: #f9ab00;
+}

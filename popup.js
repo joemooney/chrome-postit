@@ -45,6 +45,8 @@ document.addEventListener('DOMContentLoaded', function() {
   const defaultViewSelect = document.getElementById('defaultViewSelect');
   const userName = document.getElementById('userName');
   const userNickname = document.getElementById('userNickname');
+  const databaseUrl = document.getElementById('databaseUrl');
+  const dbStatus = document.getElementById('dbStatus');
   const saveSettingsBtn = document.getElementById('saveSettings');
   const settingsTab = document.getElementById('settings-tab');
   
@@ -53,6 +55,7 @@ document.addEventListener('DOMContentLoaded', function() {
   let currentStatusFilter = '';
   let activeTab = 'add';
   let previousTab = 'add';
+  let dbClient = null;
 
   loadNotes();
   loadSettings();
@@ -569,6 +572,12 @@ document.addEventListener('DOMContentLoaded', function() {
       // Apply user info
       userName.value = settings.userName || '';
       userNickname.value = settings.userNickname || '';
+      
+      // Apply database URL
+      databaseUrl.value = settings.databaseUrl || '';
+      if (settings.databaseUrl) {
+        initializeDatabase(settings.databaseUrl);
+      }
     });
   }
 
@@ -697,7 +706,8 @@ document.addEventListener('DOMContentLoaded', function() {
       theme: themeSelect.value,
       defaultView: defaultViewSelect.value,
       userName: userName.value.trim(),
-      userNickname: userNickname.value.trim()
+      userNickname: userNickname.value.trim(),
+      databaseUrl: databaseUrl.value.trim()
     };
     
     chrome.storage.local.set({ settings: settings }, function() {
@@ -802,6 +812,114 @@ document.addEventListener('DOMContentLoaded', function() {
       document.body.classList.add('dark-theme');
     } else {
       document.body.classList.remove('dark-theme');
+    }
+  });
+
+  // Database functions
+  async function initializeDatabase(url) {
+    if (!url) {
+      updateDbStatus('disconnected', 'No database URL configured');
+      return;
+    }
+
+    updateDbStatus('connecting', 'Connecting to database...');
+    
+    // Load the database module dynamically
+    try {
+      const module = await import('./database.js');
+      const DatabaseClient = module.default || window.DatabaseClient;
+      
+      dbClient = new DatabaseClient(url);
+      const connected = await dbClient.testConnection();
+      
+      if (connected) {
+        updateDbStatus('connected', 'Connected to database');
+        // Optionally sync notes on connection
+        // syncNotesToDatabase();
+      } else {
+        updateDbStatus('disconnected', 'Failed to connect to database');
+      }
+    } catch (error) {
+      console.error('Database initialization error:', error);
+      updateDbStatus('disconnected', 'Database connection error');
+    }
+  }
+
+  function updateDbStatus(status, message) {
+    dbStatus.className = 'db-status ' + status;
+    dbStatus.textContent = message;
+  }
+
+  // Add database ID tracking to notes
+  function updateNoteWithDbId(localId, dbId) {
+    chrome.storage.local.get(['notes'], function(result) {
+      const notes = result.notes || [];
+      const note = notes.find(n => n.id === localId);
+      if (note) {
+        note.db_id = dbId;
+        chrome.storage.local.set({ notes: notes });
+      }
+    });
+  }
+
+  // Override addNote to sync with database
+  const originalAddNote = addNote;
+  window.addNote = async function(title, text, url, tags, status, priority, date) {
+    // First add locally
+    originalAddNote(title, text, url, tags, status, priority, date);
+    
+    // Then sync to database if connected
+    if (dbClient && dbClient.connected) {
+      const note = {
+        title: title || generateTitle(text),
+        text: text,
+        url: url,
+        tags: parseTags(tags),
+        status: status,
+        priority: priority,
+        creationDate: date,
+        timestamp: new Date().toISOString()
+      };
+      
+      const result = await dbClient.insertNote(note);
+      if (result.success && result.db_id) {
+        // Update the local note with the database ID
+        chrome.storage.local.get(['notes'], function(data) {
+          const notes = data.notes || [];
+          const lastNote = notes[notes.length - 1];
+          if (lastNote) {
+            updateNoteWithDbId(lastNote.id, result.db_id);
+          }
+        });
+      }
+    }
+  };
+
+  // Override deleteNote to sync with database
+  const originalDeleteNote = deleteNote;
+  window.deleteNote = async function(noteId) {
+    // Get the note before deleting to check for db_id
+    chrome.storage.local.get(['notes'], async function(result) {
+      const notes = result.notes || [];
+      const note = notes.find(n => n.id === noteId);
+      
+      if (note && note.db_id && dbClient && dbClient.connected) {
+        await dbClient.deleteNote(noteId, note.db_id);
+      }
+      
+      // Delete locally
+      originalDeleteNote(noteId);
+    });
+  };
+
+  // Handle database URL change
+  databaseUrl.addEventListener('change', function() {
+    const url = databaseUrl.value.trim();
+    if (url) {
+      initializeDatabase(url);
+    } else {
+      dbClient = null;
+      updateDbStatus('disconnected', 'No database URL configured');
     }
   });
 });
