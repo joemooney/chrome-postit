@@ -185,10 +185,15 @@ document.addEventListener('DOMContentLoaded', function() {
       addNote(title, text, url, tags, status, priority, date, function(success) {
         if (success) {
           clearForm();
+          showToast('Post-it Added Successfully');
+          
           // Close popup if we're in popup view (not sidebar or tab)
           if (!window.location.href.includes('sidepanel.html') && 
               !window.location.href.includes('tab.html')) {
-            window.close();
+            // Delay closing to show toast
+            setTimeout(() => {
+              window.close();
+            }, 800);
           }
         }
       });
@@ -658,6 +663,22 @@ document.addEventListener('DOMContentLoaded', function() {
     setTimeout(() => {
       messageDiv.remove();
     }, 3000);
+  }
+
+  // Show toast notification
+  function showToast(message, duration = 1500) {
+    const toast = document.createElement('div');
+    toast.className = 'toast';
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    
+    // Fade out and remove
+    setTimeout(() => {
+      toast.classList.add('fade-out');
+      setTimeout(() => {
+        toast.remove();
+      }, 300);
+    }, duration);
   }
 
   // Check if opened from context menu and handle accordingly

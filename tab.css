@@ -768,3 +768,50 @@ body.dark-theme .toggle-details-btn:hover {
 body.dark-theme .details-section {
   border-top-color: #444;
 }
+
+/* Toast notification */
+.toast {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #34a853;
+  color: white;
+  padding: 12px 24px;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  z-index: 10000;
+  opacity: 0;
+  animation: toastSlideUp 0.3s ease-out forwards;
+}
+
+@keyframes toastSlideUp {
+  from {
+    bottom: 0;
+    opacity: 0;
+  }
+  to {
+    bottom: 20px;
+    opacity: 1;
+  }
+}
+
+@keyframes toastFadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+.toast.fade-out {
+  animation: toastFadeOut 0.3s ease-out forwards;
+}
+
+body.dark-theme .toast {
+  background: #1e4620;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}

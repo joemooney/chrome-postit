@@ -139,6 +139,26 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
+  // Toast notification function
+  function showToast(message) {
+    const toast = document.createElement('div');
+    toast.className = 'toast';
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    
+    // Force reflow to ensure animation plays
+    toast.offsetHeight;
+    
+    toast.classList.add('show');
+    
+    setTimeout(() => {
+      toast.classList.remove('show');
+      setTimeout(() => {
+        document.body.removeChild(toast);
+      }, 300);
+    }, 2000);
+  }
+
   // Add note from Add tab
   addNoteBtn.addEventListener('click', function() {
     const title = noteTitle.value.trim();
@@ -156,6 +176,7 @@ document.addEventListener('DOMContentLoaded', function() {
       addNote(title, text, url, tags, status, priority, date, function(success) {
         if (success) {
           clearForm();
+          showToast('Post-it Added Successfully');
         }
       });
     }
