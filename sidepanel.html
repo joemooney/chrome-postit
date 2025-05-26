@@ -9,16 +9,20 @@
       width: 100%;
       max-width: none;
       height: 100vh;
-      overflow-y: auto;
+      margin: 0;
+      overflow: hidden; /* Let container handle scrolling */
     }
     .container {
-      height: 100%;
+      height: 100vh;
       display: flex;
       flex-direction: column;
+      overflow: hidden;
     }
     #notesList {
       flex: 1;
       overflow-y: auto;
+      max-height: none !important; /* Override popup.css restriction */
+      height: auto;
     }
     /* Ensure consistent styling in sidebar */
     .note-input {
