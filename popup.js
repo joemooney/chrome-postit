@@ -185,15 +185,14 @@ document.addEventListener('DOMContentLoaded', function() {
       addNote(title, text, url, tags, status, priority, date, function(success) {
         if (success) {
           clearForm();
-          showToast('Post-it Added Successfully');
           
-          // Close popup if we're in popup view (not sidebar or tab)
+          // Close popup immediately if we're in popup view
           if (!window.location.href.includes('sidepanel.html') && 
               !window.location.href.includes('tab.html')) {
-            // Delay closing to show toast
-            setTimeout(() => {
-              window.close();
-            }, 800);
+            window.close();
+          } else {
+            // Show toast only in sidebar and tab views
+            showToast('Post-it Added Successfully');
           }
         }
       });
