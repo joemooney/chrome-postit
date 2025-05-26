@@ -180,6 +180,51 @@ h1 {
   border-color: #4285f4;
 }
 
+/* Expandable details section */
+.expand-details {
+  margin-top: 12px;
+}
+
+.toggle-details-btn {
+  background: transparent;
+  border: none;
+  color: #4285f4;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 4px 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: color 0.2s;
+}
+
+.toggle-details-btn:hover {
+  color: #357abd;
+}
+
+.toggle-icon {
+  font-size: 10px;
+  transition: transform 0.2s;
+}
+
+.details-section {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #e0e0e0;
+  animation: slideDown 0.2s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .field-row {
   display: flex;
   gap: 12px;
@@ -702,4 +747,16 @@ body.dark-theme .meta-date {
 
 body.dark-theme .tabs {
   border-bottom-color: #444;
+}
+
+body.dark-theme .toggle-details-btn {
+  color: #4285f4;
+}
+
+body.dark-theme .toggle-details-btn:hover {
+  color: #5a9ff7;
+}
+
+body.dark-theme .details-section {
+  border-top-color: #444;
 }

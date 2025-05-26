@@ -9,14 +9,15 @@ document.addEventListener('DOMContentLoaded', function() {
   const noteText = document.getElementById('noteText');
   const noteTags = document.getElementById('noteTags');
   
-  // Add+ tab fields
-  const noteTitle2 = document.getElementById('noteTitle2');
-  const noteText2 = document.getElementById('noteText2');
+  // Details fields (in Add tab)
   const noteUrl = document.getElementById('noteUrl');
   const creationDate = document.getElementById('creationDate');
   const noteStatus = document.getElementById('noteStatus');
   const notePriority = document.getElementById('notePriority');
-  const noteTags2 = document.getElementById('noteTags2');
+  
+  // Details section elements
+  const detailsToggle = document.getElementById('toggleDetails');
+  const detailsSection = document.getElementById('detailsSection');
   
   // Edit tab fields
   const editNoteId = document.getElementById('editNoteId');
@@ -30,7 +31,6 @@ document.addEventListener('DOMContentLoaded', function() {
   
   // Other elements
   const addNoteBtn = document.getElementById('addNote');
-  const addNoteBtn2 = document.getElementById('addNote2');
   const applyEditBtn = document.getElementById('applyEdit');
   const cancelEditBtn = document.getElementById('cancelEdit');
   const notesList = document.getElementById('notesList');
@@ -116,35 +116,25 @@ document.addEventListener('DOMContentLoaded', function() {
       
       activeTab = targetTab;
       
-      // Only sync between Add and Add+ tabs
-      if (targetTab === 'add-plus' && activeTab !== 'query') {
-        syncFields('add-plus');
-      } else if (targetTab === 'add' && activeTab !== 'query') {
-        syncFields('add');
-      }
+      // No longer syncing between tabs
     });
   });
 
-  // Sync fields between tabs
-  function syncFields(toTab) {
-    if (toTab === 'add-plus') {
-      noteTitle2.value = noteTitle.value;
-      noteText2.value = noteText.value;
-      noteTags2.value = noteTags.value;
-    } else if (toTab === 'add') {
-      noteTitle.value = noteTitle2.value;
-      noteText.value = noteText2.value;
-      noteTags.value = noteTags2.value;
-    }
+  // Details toggle functionality
+  if (detailsToggle) {
+    detailsToggle.addEventListener('click', function() {
+      const toggleIcon = detailsToggle.querySelector('.toggle-icon');
+      const isExpanded = detailsSection.style.display !== 'none';
+      
+      if (isExpanded) {
+        detailsSection.style.display = 'none';
+        toggleIcon.textContent = '▶';
+      } else {
+        detailsSection.style.display = 'block';
+        toggleIcon.textContent = '▼';
+      }
+    });
   }
-
-  // Keep fields in sync
-  noteTitle.addEventListener('input', () => noteTitle2.value = noteTitle.value);
-  noteText.addEventListener('input', () => noteText2.value = noteText.value);
-  noteTags.addEventListener('input', () => noteTags2.value = noteTags.value);
-  noteTitle2.addEventListener('input', () => noteTitle.value = noteTitle2.value);
-  noteText2.addEventListener('input', () => noteText.value = noteText2.value);
-  noteTags2.addEventListener('input', () => noteTags.value = noteTags2.value);
 
   // Add note from Add tab
   addNoteBtn.addEventListener('click', function() {
@@ -153,45 +143,35 @@ document.addEventListener('DOMContentLoaded', function() {
     const tags = noteTags.value.trim();
     
     if (text) {
-      // Use default values from Add+ tab
+      // Get values from details section
       const url = noteUrl.value.trim();
-      const status = 'open';
-      const priority = 'medium';
-      const date = new Date().toISOString();
+      const status = noteStatus.value || 'open';
+      const priority = notePriority.value || 'medium';
+      const date = creationDate.value || new Date().toISOString();
       
       addNote(title, text, url, tags, status, priority, date);
       clearForm();
     }
   });
 
-  // Add note from Add+ tab
-  addNoteBtn2.addEventListener('click', function() {
-    const title = noteTitle2.value.trim();
-    const text = noteText2.value.trim();
-    const tags = noteTags2.value.trim();
-    
-    if (text) {
-      const url = noteUrl.value.trim();
-      const status = noteStatus.value;
-      const priority = notePriority.value;
-      const date = creationDate.value;
-      
-      addNote(title, text, url, tags, status, priority, date);
-      clearForm();
-    }
-  });
 
   function clearForm() {
     noteTitle.value = '';
     noteText.value = '';
     noteTags.value = '';
-    noteTitle2.value = '';
-    noteText2.value = '';
-    noteTags2.value = '';
     noteStatus.value = 'open';
     notePriority.value = 'medium';
     noteUrl.value = '';
     setCurrentDate();
+    
+    // Collapse details section
+    if (detailsSection && detailsSection.style.display !== 'none') {
+      detailsSection.style.display = 'none';
+      const toggleIcon = detailsToggle.querySelector('.toggle-icon');
+      if (toggleIcon) {
+        toggleIcon.textContent = '▶';
+      }
+    }
   }
 
   noteText.addEventListener('keypress', function(e) {
@@ -201,12 +181,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
 
-  noteText2.addEventListener('keypress', function(e) {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      addNoteBtn2.click();
-    }
-  });
 
   filterTags.addEventListener('input', function() {
     currentFilter = filterTags.value.trim().toLowerCase();
@@ -598,26 +572,25 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Populate the appropriate fields based on available data
         if (data.selectedText || data.pageTitle || data.pageUrl) {
-          // If we have selected text, use the simple Add tab
+          // Populate fields with context menu data
           if (data.selectedText) {
             noteText.value = data.selectedText;
-            noteText2.value = data.selectedText;
-            if (data.pageTitle) {
-              noteTitle.value = data.pageTitle;
-              noteTitle2.value = data.pageTitle;
-            }
-            switchToTab('add');
-          } else {
-            // If we have URL or title but no selected text, use Add+ tab
-            if (data.pageTitle) {
-              noteTitle2.value = data.pageTitle;
-              noteTitle.value = data.pageTitle;
-            }
-            if (data.pageUrl) {
-              noteUrl.value = data.pageUrl;
-            }
-            switchToTab('add-plus');
           }
+          if (data.pageTitle) {
+            noteTitle.value = data.pageTitle;
+          }
+          if (data.pageUrl) {
+            noteUrl.value = data.pageUrl;
+            // Expand details section if URL is provided
+            if (detailsSection && detailsSection.style.display === 'none') {
+              detailsSection.style.display = 'block';
+              const toggleIcon = detailsToggle.querySelector('.toggle-icon');
+              if (toggleIcon) {
+                toggleIcon.textContent = '▼';
+              }
+            }
+          }
+          switchToTab('add');
           
           // Clear the stored data after using it
           chrome.storage.local.remove('contextMenuData');

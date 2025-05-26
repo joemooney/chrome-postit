@@ -7,15 +7,15 @@ document.addEventListener('DOMContentLoaded', function() {
   const noteTitle = document.getElementById('noteTitle');
   const noteText = document.getElementById('noteText');
   const noteTags = document.getElementById('noteTags');
-  
-  // Add+ tab fields
-  const noteTitle2 = document.getElementById('noteTitle2');
-  const noteText2 = document.getElementById('noteText2');
   const noteUrl = document.getElementById('noteUrl');
   const creationDate = document.getElementById('creationDate');
   const noteStatus = document.getElementById('noteStatus');
   const notePriority = document.getElementById('notePriority');
-  const noteTags2 = document.getElementById('noteTags2');
+  
+  // Expandable details elements
+  const toggleDetailsBtn = document.getElementById('toggleDetails');
+  const detailsSection = document.getElementById('detailsSection');
+  const toggleIcon = toggleDetailsBtn.querySelector('.toggle-icon');
   
   // Edit tab fields
   const editNoteId = document.getElementById('editNoteId');
@@ -29,7 +29,6 @@ document.addEventListener('DOMContentLoaded', function() {
   
   // Other elements
   const addNoteBtn = document.getElementById('addNote');
-  const addNoteBtn2 = document.getElementById('addNote2');
   const applyEditBtn = document.getElementById('applyEdit');
   const cancelEditBtn = document.getElementById('cancelEdit');
   const notesList = document.getElementById('notesList');
@@ -71,6 +70,21 @@ document.addEventListener('DOMContentLoaded', function() {
   
   // Initially hide notes list since we start on Add tab
   notesList.style.display = 'none';
+  
+  // Handle expandable details toggle
+  toggleDetailsBtn.addEventListener('click', function() {
+    const isExpanded = detailsSection.style.display !== 'none';
+    
+    if (isExpanded) {
+      detailsSection.style.display = 'none';
+      toggleIcon.classList.remove('expanded');
+      toggleIcon.textContent = '▶';
+    } else {
+      detailsSection.style.display = 'block';
+      toggleIcon.classList.add('expanded');
+      toggleIcon.textContent = '▼';
+    }
+  });
   
   // Handle sidebar button
   const openSidePanelBtn = document.getElementById('openSidePanel');
@@ -143,13 +157,6 @@ document.addEventListener('DOMContentLoaded', function() {
       
       activeTab = targetTab;
       
-      // Only sync between Add and Add+ tabs
-      if (targetTab === 'add-plus' && activeTab !== 'query') {
-        syncFields('add-plus');
-      } else if (targetTab === 'add' && activeTab !== 'query') {
-        syncFields('add');
-      }
-      
       // Show/hide notes list based on active tab
       if (targetTab === 'query') {
         notesList.style.display = 'block';
@@ -160,27 +167,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   });
 
-  // Sync fields between tabs
-  function syncFields(toTab) {
-    if (toTab === 'add-plus') {
-      noteTitle2.value = noteTitle.value;
-      noteText2.value = noteText.value;
-      noteTags2.value = noteTags.value;
-    } else if (toTab === 'add') {
-      noteTitle.value = noteTitle2.value;
-      noteText.value = noteText2.value;
-      noteTags.value = noteTags2.value;
-    }
-  }
-
-  // Keep fields in sync
-  noteTitle.addEventListener('input', () => noteTitle2.value = noteTitle.value);
-  noteText.addEventListener('input', () => noteText2.value = noteText.value);
-  noteTags.addEventListener('input', () => noteTags2.value = noteTags.value);
-  noteTitle2.addEventListener('input', () => noteTitle.value = noteTitle2.value);
-  noteText2.addEventListener('input', () => noteText.value = noteText2.value);
-  noteTags2.addEventListener('input', () => noteTags.value = noteTags2.value);
-
   // Add note from Add tab
   addNoteBtn.addEventListener('click', function() {
     const title = noteTitle.value.trim();
@@ -188,28 +174,10 @@ document.addEventListener('DOMContentLoaded', function() {
     const tags = noteTags.value.trim();
     
     if (text) {
-      // Use default values from Add+ tab
-      const url = noteUrl.value.trim();
-      const status = 'open';
-      const priority = 'medium';
-      const date = new Date().toISOString();
-      
-      addNote(title, text, url, tags, status, priority, date);
-      clearForm();
-    }
-  });
-
-  // Add note from Add+ tab
-  addNoteBtn2.addEventListener('click', function() {
-    const title = noteTitle2.value.trim();
-    const text = noteText2.value.trim();
-    const tags = noteTags2.value.trim();
-    
-    if (text) {
       const url = noteUrl.value.trim();
       const status = noteStatus.value;
       const priority = notePriority.value;
-      const date = creationDate.value;
+      const date = creationDate.value || new Date().toISOString();
       
       addNote(title, text, url, tags, status, priority, date);
       clearForm();
@@ -220,13 +188,15 @@ document.addEventListener('DOMContentLoaded', function() {
     noteTitle.value = '';
     noteText.value = '';
     noteTags.value = '';
-    noteTitle2.value = '';
-    noteText2.value = '';
-    noteTags2.value = '';
     noteStatus.value = 'open';
     notePriority.value = 'medium';
     getCurrentPageUrl();
     setCurrentDate();
+    
+    // Collapse details section after adding note
+    detailsSection.style.display = 'none';
+    toggleIcon.classList.remove('expanded');
+    toggleIcon.textContent = '▶';
   }
 
   noteText.addEventListener('keypress', function(e) {
@@ -236,12 +206,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
 
-  noteText2.addEventListener('keypress', function(e) {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      addNoteBtn2.click();
-    }
-  });
 
   filterTags.addEventListener('input', function() {
     currentFilter = filterTags.value.trim().toLowerCase();
@@ -475,14 +439,9 @@ document.addEventListener('DOMContentLoaded', function() {
             if (!noteText.value.trim()) {
               noteText.value = selectedText;
             }
-            if (!noteText2.value.trim()) {
-              noteText2.value = selectedText;
-            }
-            // Focus on the appropriate field based on active tab
+            // Focus on the field
             if (activeTab === 'add') {
               noteText.focus();
-            } else if (activeTab === 'add-plus') {
-              noteText2.focus();
             }
           }
         });
@@ -672,13 +631,11 @@ document.addEventListener('DOMContentLoaded', function() {
         // If we have selected text, populate the fields
         if (noteData.selectedText) {
           noteText.value = noteData.selectedText;
-          noteText2.value = noteData.selectedText;
           
           // Auto-generate title from page title or first 40 chars of selected text
           const autoTitle = noteData.pageTitle || noteData.selectedText.substring(0, 40) + 
                           (noteData.selectedText.length > 40 ? '...' : '');
           noteTitle.value = autoTitle;
-          noteTitle2.value = autoTitle;
         }
         
         // Override the URL with the page where right-click happened

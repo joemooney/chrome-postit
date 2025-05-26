@@ -16,7 +16,6 @@
     
     <div class="tabs" id="mainTabs">
       <button class="tab-button active" data-tab="add">Add</button>
-      <button class="tab-button" data-tab="add-plus">Add+</button>
       <button class="tab-button" data-tab="query">Query</button>
       <button class="tab-button" data-tab="settings" style="display: none;">Settings</button>
     </div>
@@ -30,32 +29,33 @@
         <input type="text" id="noteTitle" placeholder="Title (optional)">
         <textarea id="noteText" placeholder="Write your note here..."></textarea>
         <input type="text" id="noteTags" placeholder="Tags (separated by space, comma, or semicolon)">
-        <button id="addNote">Add Note</button>
-      </div>
-    </div>
-    
-    <div class="tab-content" id="add-plus-tab">
-      <div class="note-input">
-        <input type="text" id="noteTitle2" placeholder="Title (optional)">
-        <textarea id="noteText2" placeholder="Write your note here..."></textarea>
-        <input type="text" id="noteUrl" placeholder="URL (auto-filled)" readonly>
-        <input type="text" id="creationDate" placeholder="Creation Date" readonly>
-        <div class="field-row">
-          <select id="noteStatus">
-            <option value="open">Open</option>
-            <option value="working">Working</option>
-            <option value="closed">Closed</option>
-            <option value="archived">Archived</option>
-          </select>
-          <select id="notePriority">
-            <option value="low">Low</option>
-            <option value="medium" selected>Medium</option>
-            <option value="high">High</option>
-            <option value="critical">Critical</option>
-          </select>
+        
+        <div class="expand-details">
+          <button type="button" id="toggleDetails" class="toggle-details-btn">
+            <span class="toggle-icon">▶</span> More Details
+          </button>
         </div>
-        <input type="text" id="noteTags2" placeholder="Tags (separated by space, comma, or semicolon)">
-        <button id="addNote2">Add Note</button>
+        
+        <div id="detailsSection" class="details-section" style="display: none;">
+          <input type="text" id="noteUrl" placeholder="URL (auto-filled)" readonly>
+          <input type="text" id="creationDate" placeholder="Creation Date" readonly>
+          <div class="field-row">
+            <select id="noteStatus">
+              <option value="open">Open</option>
+              <option value="working">Working</option>
+              <option value="closed">Closed</option>
+              <option value="archived">Archived</option>
+            </select>
+            <select id="notePriority">
+              <option value="low">Low</option>
+              <option value="medium" selected>Medium</option>
+              <option value="high">High</option>
+              <option value="critical">Critical</option>
+            </select>
+          </div>
+        </div>
+        
+        <button id="addNote">Add Note</button>
       </div>
     </div>
     
