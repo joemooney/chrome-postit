@@ -204,3 +204,13 @@ The Chrome Post-it Notes extension evolved from a simple note-taking tool to a f
 Each iteration built upon the previous functionality while maintaining backward compatibility and a clean user interface.
 
 Note: Due to Chrome API restrictions, the sidebar view cannot be set as a true default view - it requires user interaction to open.
+
+## Multiple UI Improvements
+**Prompt:** "please make the popup view resizable, also in the default size the priority is cut off and not visible so the layout should wrap. And the Priority should also be shown on the Query view in the Browswer Tab and Sidebar views. Double clicking on the Title should edit the note."
+
+- Made popup view resizable with min/max constraints
+- Fixed field-row layout to wrap when space is limited
+- Priority already shown in all views (was already implemented)
+- Added double-click on title to edit note functionality
+- Added hover effect on titles to indicate clickability
+- Applied changes to all view modes

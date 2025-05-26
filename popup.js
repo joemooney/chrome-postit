@@ -310,6 +310,10 @@ document.addEventListener('DOMContentLoaded', function() {
       const noteTitle = document.createElement('div');
       noteTitle.className = 'note-title';
       noteTitle.textContent = note.title;
+      noteTitle.title = 'Double-click to edit';
+      noteTitle.addEventListener('dblclick', function() {
+        editNote(note);
+      });
       noteDiv.appendChild(noteTitle);
     }
 
