@@ -571,6 +571,13 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
 
+  // Message listener for background script
+  chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
+    if (request.action === 'handleContextMenu') {
+      checkContextMenuData();
+    }
+  });
+
   // Check for context menu data
   function checkContextMenuData() {
     chrome.storage.local.get(['contextMenuData'], function(result) {

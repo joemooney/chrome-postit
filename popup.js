@@ -574,26 +574,36 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Check if we should redirect to a different view based on settings
   function checkDefaultView() {
-    chrome.storage.local.get(['settings'], function(result) {
-      const settings = result.settings || {};
-      const defaultView = settings.defaultView || 'popup';
-      
-      // Only redirect if not already in popup view and default is not popup
-      if (defaultView !== 'popup') {
-        switch (defaultView) {
-          case 'sidebar':
-            // Can't auto-open sidebar due to Chrome restrictions
-            // Show a message instead
-            showSidebarMessage();
-            break;
-            
-          case 'browser-tab':
-            // Open in new tab and close popup
-            chrome.tabs.create({ url: 'tab.html' });
-            window.close();
-            break;
-        }
+    // First check if there's already a browser tab open
+    chrome.runtime.sendMessage({ action: 'checkForExistingTab' }, (response) => {
+      if (response && response.found) {
+        // If found, close the popup
+        window.close();
+        return;
       }
+      
+      // Otherwise, check default view settings
+      chrome.storage.local.get(['settings'], function(result) {
+        const settings = result.settings || {};
+        const defaultView = settings.defaultView || 'popup';
+        
+        // Only redirect if not already in popup view and default is not popup
+        if (defaultView !== 'popup') {
+          switch (defaultView) {
+            case 'sidebar':
+              // Can't auto-open sidebar due to Chrome restrictions
+              // Show a message instead
+              showSidebarMessage();
+              break;
+              
+            case 'browser-tab':
+              // Open in new tab and close popup
+              chrome.tabs.create({ url: 'tab.html' });
+              window.close();
+              break;
+          }
+        }
+      });
     });
   }
   
