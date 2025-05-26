@@ -152,8 +152,12 @@ document.addEventListener('DOMContentLoaded', function() {
       const priority = notePriority.value || 'medium';
       const date = creationDate.value || new Date().toISOString();
       
-      addNote(title, text, url, tags, status, priority, date);
-      clearForm();
+      // Pass a callback but don't close the window
+      addNote(title, text, url, tags, status, priority, date, function(success) {
+        if (success) {
+          clearForm();
+        }
+      });
     }
   });
 
@@ -203,7 +207,7 @@ document.addEventListener('DOMContentLoaded', function() {
     displayNotes(allNotes);
   });
 
-  function addNote(title, text, url, tags, status, priority, date) {
+  function addNote(title, text, url, tags, status, priority, date, callback) {
     chrome.storage.local.get(['notes'], function(result) {
       const notes = result.notes || [];
       // Split by comma, semicolon, or whitespace
@@ -227,6 +231,7 @@ document.addEventListener('DOMContentLoaded', function() {
       chrome.storage.local.set({ notes: notes }, function() {
         allNotes = notes;
         filterNotes();
+        if (callback) callback(true);
       });
     });
   }
@@ -693,9 +698,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Override addNote to sync with database
   const originalAddNote = addNote;
-  window.addNote = async function(title, text, url, tags, status, priority, date) {
+  window.addNote = async function(title, text, url, tags, status, priority, date, callback) {
     // First add locally
-    originalAddNote(title, text, url, tags, status, priority, date);
+    originalAddNote(title, text, url, tags, status, priority, date, callback);
     
     // Then sync to database if connected
     if (dbClient && dbClient.connected) {

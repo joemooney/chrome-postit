@@ -226,3 +226,12 @@ Note: Due to Chrome API restrictions, the sidebar view cannot be set as a true d
 - Connection status indicator in settings
 - Support for tags through junction table
 - Works across all view modes (popup, sidebar, browser tab)
+
+## Sidebar Priority Usage
+**Prompt:** "When I have the sidebar open and I click on the postit extension icon or mouse menu, it opens the popup. It should just use the sidebar menu and open the 'Add' view tab"
+
+- Check for open sidebar before showing popup
+- Right-click context menu properly uses existing sidebar
+- Extension icon click shows popup briefly due to Chrome limitation
+- When sidebar detected, popup auto-closes and sidebar switches to Add tab
+- Chrome requires default_popup for normal popup functionality

@@ -182,8 +182,16 @@ document.addEventListener('DOMContentLoaded', function() {
       const priority = notePriority.value;
       const date = creationDate.value || new Date().toISOString();
       
-      addNote(title, text, url, tags, status, priority, date);
-      clearForm();
+      addNote(title, text, url, tags, status, priority, date, function(success) {
+        if (success) {
+          clearForm();
+          // Close popup if we're in popup view (not sidebar or tab)
+          if (!window.location.href.includes('sidepanel.html') && 
+              !window.location.href.includes('tab.html')) {
+            window.close();
+          }
+        }
+      });
     }
   });
 
@@ -228,7 +236,7 @@ document.addEventListener('DOMContentLoaded', function() {
     displayNotes(allNotes);
   });
 
-  function addNote(title, text, url, tags, status, priority, date) {
+  function addNote(title, text, url, tags, status, priority, date, callback) {
     chrome.storage.local.get(['notes'], function(result) {
       const notes = result.notes || [];
       // Split by comma, semicolon, or whitespace
@@ -252,6 +260,7 @@ document.addEventListener('DOMContentLoaded', function() {
       chrome.storage.local.set({ notes: notes }, function() {
         allNotes = notes;
         filterNotes();
+        if (callback) callback(true);
       });
     });
   }
@@ -874,35 +883,37 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Override addNote to sync with database
   const originalAddNote = addNote;
-  window.addNote = async function(title, text, url, tags, status, priority, date) {
+  window.addNote = async function(title, text, url, tags, status, priority, date, callback) {
     // First add locally
-    originalAddNote(title, text, url, tags, status, priority, date);
-    
-    // Then sync to database if connected
-    if (dbClient && dbClient.connected) {
-      const note = {
-        title: title || generateTitle(text),
-        text: text,
-        url: url,
-        tags: parseTags(tags),
-        status: status,
-        priority: priority,
-        creationDate: date,
-        timestamp: new Date().toISOString()
-      };
-      
-      const result = await dbClient.insertNote(note);
-      if (result.success && result.db_id) {
-        // Update the local note with the database ID
-        chrome.storage.local.get(['notes'], function(data) {
-          const notes = data.notes || [];
-          const lastNote = notes[notes.length - 1];
-          if (lastNote) {
-            updateNoteWithDbId(lastNote.id, result.db_id);
-          }
-        });
+    originalAddNote(title, text, url, tags, status, priority, date, async function(success) {
+      if (success && dbClient && dbClient.connected) {
+        // Then sync to database if connected
+        const note = {
+          title: title || (text.length > 40 ? text.substring(0, 40) + '...' : text),
+          text: text,
+          url: url,
+          tags: tags ? tags.split(/[,;\s]+/).map(tag => tag.trim()).filter(tag => tag) : [],
+          status: status,
+          priority: priority,
+          creationDate: date,
+          timestamp: new Date().toISOString()
+        };
+        
+        const result = await dbClient.insertNote(note);
+        if (result.success && result.db_id) {
+          // Update the local note with the database ID
+          chrome.storage.local.get(['notes'], function(data) {
+            const notes = data.notes || [];
+            const lastNote = notes[0]; // Notes are unshifted, so newest is first
+            if (lastNote) {
+              updateNoteWithDbId(lastNote.id, result.db_id);
+            }
+          });
+        }
       }
-    }
+      // Call the original callback
+      if (callback) callback(success);
+    });
   };
 
   // Override deleteNote to sync with database
