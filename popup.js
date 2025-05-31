@@ -23,6 +23,7 @@ document.addEventListener('DOMContentLoaded', function() {
   const editNoteText = document.getElementById('editNoteText');
   const editNoteUrl = document.getElementById('editNoteUrl');
   const editCreationDate = document.getElementById('editCreationDate');
+  const editLastUpdated = document.getElementById('editLastUpdated');
   const editNoteStatus = document.getElementById('editNoteStatus');
   const editNotePriority = document.getElementById('editNotePriority');
   const editNoteTags = document.getElementById('editNoteTags');
@@ -47,7 +48,9 @@ document.addEventListener('DOMContentLoaded', function() {
   const userNickname = document.getElementById('userNickname');
   const databaseUrl = document.getElementById('databaseUrl');
   const dbStatus = document.getElementById('dbStatus');
+  const syncDatabaseBtn = document.getElementById('syncDatabaseBtn');
   const saveSettingsBtn = document.getElementById('saveSettings');
+  const cancelSettingsBtn = document.getElementById('cancelSettings');
   const settingsTab = document.getElementById('settings-tab');
   
   let allNotes = [];
@@ -71,8 +74,6 @@ document.addEventListener('DOMContentLoaded', function() {
     checkDefaultView();
   }, 100);
   
-  // Initially hide notes list since we start on Add tab
-  notesList.style.display = 'none';
   
   // Handle expandable details toggle
   toggleDetailsBtn.addEventListener('click', function() {
@@ -93,7 +94,11 @@ document.addEventListener('DOMContentLoaded', function() {
   const openSidePanelBtn = document.getElementById('openSidePanel');
   if (openSidePanelBtn) {
     openSidePanelBtn.addEventListener('click', function() {
-      chrome.runtime.sendMessage({ action: 'openSidePanel' });
+      chrome.runtime.sendMessage({ action: 'openSidePanel' }, (response) => {
+        if (chrome.runtime.lastError) {
+          console.log('Could not open side panel:', chrome.runtime.lastError.message);
+        }
+      });
       window.close(); // Close the popup
     });
   }
@@ -132,7 +137,6 @@ document.addEventListener('DOMContentLoaded', function() {
       
       settingsTab.classList.add('active');
       activeTab = 'settings';
-      notesList.style.display = 'none';
     });
   }
 
@@ -160,12 +164,9 @@ document.addEventListener('DOMContentLoaded', function() {
       
       activeTab = targetTab;
       
-      // Show/hide notes list based on active tab
+      // Refresh notes when switching to query tab
       if (targetTab === 'query') {
-        notesList.style.display = 'block';
         filterNotes(); // Refresh the display when switching to query tab
-      } else {
-        notesList.style.display = 'none';
       }
     });
   });
@@ -189,7 +190,16 @@ document.addEventListener('DOMContentLoaded', function() {
           // Close popup immediately if we're in popup view
           if (!window.location.href.includes('sidepanel.html') && 
               !window.location.href.includes('tab.html')) {
-            window.close();
+            // Send message to background to show toast after popup closes
+            chrome.runtime.sendMessage({ 
+              action: 'showToastAfterClose', 
+              message: 'Post-it Added Successfully' 
+            }, (response) => {
+              if (chrome.runtime.lastError) {
+                console.log('Could not show toast:', chrome.runtime.lastError.message);
+              }
+              window.close();
+            });
           } else {
             // Show toast only in sidebar and tab views
             showToast('Post-it Added Successfully');
@@ -240,14 +250,24 @@ document.addEventListener('DOMContentLoaded', function() {
     displayNotes(allNotes);
   });
 
-  function addNote(title, text, url, tags, status, priority, date, callback) {
-    chrome.storage.local.get(['notes'], function(result) {
+  async function addNote(title, text, url, tags, status, priority, date, callback) {
+    chrome.storage.local.get(['notes', 'settings'], async function(result) {
       const notes = result.notes || [];
+      const settings = result.settings || {};
       // Split by comma, semicolon, or whitespace
       const tagArray = tags ? tags.split(/[,;\s]+/).map(tag => tag.trim()).filter(tag => tag) : [];
       
       // Generate title from text if not provided
       const finalTitle = title || (text.length > 40 ? text.substring(0, 40) + '...' : text);
+      
+      // Check for duplicate title
+      const duplicateNote = notes.find(note => note.title === finalTitle);
+      if (duplicateNote) {
+        console.error('Note with this title already exists:', finalTitle);
+        showToast('A note with this title already exists!', 'error');
+        if (callback) callback(false);
+        return;
+      }
       
       const newNote = {
         id: Date.now(),
@@ -258,8 +278,33 @@ document.addEventListener('DOMContentLoaded', function() {
         status: status || 'open',
         priority: priority || 'medium',
         creationDate: date || new Date().toISOString(),
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        userName: settings.userName || '',
+        createdBy: settings.userName || ''
       };
+      
+      // If database is connected, sync to database
+      if (dbClient && dbClient.connected) {
+        try {
+          const result = await dbClient.insertNote(newNote);
+          if (result.success && result.db_id) {
+            newNote.db_id = result.db_id;
+          } else if (result.message && result.message.includes('UNIQUE constraint')) {
+            console.error('Database: Note with this title already exists');
+            showToast('A note with this title already exists in the database!', 'error');
+            if (callback) callback(false);
+            return;
+          }
+        } catch (error) {
+          console.error('Failed to sync note to database:', error);
+          if (error.message && error.message.includes('UNIQUE constraint')) {
+            showToast('A note with this title already exists in the database!', 'error');
+            if (callback) callback(false);
+            return;
+          }
+        }
+      }
+      
       notes.unshift(newNote);
       chrome.storage.local.set({ notes: notes }, function() {
         allNotes = notes;
@@ -341,10 +386,14 @@ document.addEventListener('DOMContentLoaded', function() {
     const metaDiv = document.createElement('div');
     metaDiv.className = 'note-meta';
     
-    // Format date
+    // Format dates
     const dateStr = new Date(note.creationDate || note.timestamp).toLocaleDateString();
+    const lastUpdatedStr = note.lastUpdated ? new Date(note.lastUpdated).toLocaleDateString() : dateStr;
+    const showUpdated = note.lastUpdated && note.lastUpdated !== note.creationDate && lastUpdatedStr !== dateStr;
+    
     metaDiv.innerHTML = `
       <span class="meta-date">${dateStr}</span>
+      ${showUpdated ? `<span class="meta-updated">Updated: ${lastUpdatedStr}</span>` : ''}
       <span class="meta-status">${note.status || 'open'}</span>
       <span class="meta-priority">${note.priority || 'medium'}</span>
     `;
@@ -384,7 +433,6 @@ document.addEventListener('DOMContentLoaded', function() {
           queryContent.classList.add('active');
           
           activeTab = 'query';
-          notesList.style.display = 'block';
           
           filterTags.value = tag;
           currentFilter = tag.toLowerCase();
@@ -425,9 +473,39 @@ document.addEventListener('DOMContentLoaded', function() {
     return noteDiv;
   }
 
-  function deleteNote(noteId) {
-    chrome.storage.local.get(['notes'], function(result) {
+  async function deleteNote(noteId) {
+    chrome.storage.local.get(['notes'], async function(result) {
       const notes = result.notes || [];
+      const noteToDelete = notes.find(note => note.id === noteId);
+      
+      console.log('Delete note called:', {
+        noteId,
+        noteToDelete,
+        dbClient: !!dbClient,
+        connected: dbClient?.connected,
+        db_id: noteToDelete?.db_id
+      });
+      
+      // If database is connected and note has db_id, delete from database
+      if (dbClient && dbClient.connected && noteToDelete?.db_id) {
+        console.log('Attempting to delete from database...');
+        try {
+          const result = await dbClient.deleteNote(noteToDelete.id, noteToDelete.db_id);
+          console.log('Database delete result:', result);
+          if (!result.success) {
+            console.error('Failed to delete note from database:', result.message);
+          }
+        } catch (error) {
+          console.error('Failed to delete note from database:', error);
+        }
+      } else {
+        console.log('Skipping database delete:', {
+          hasDbClient: !!dbClient,
+          isConnected: dbClient?.connected,
+          hasDbId: !!noteToDelete?.db_id
+        });
+      }
+      
       const updatedNotes = notes.filter(note => note.id !== noteId);
       chrome.storage.local.set({ notes: updatedNotes }, function() {
         allNotes = updatedNotes;
@@ -455,14 +533,26 @@ document.addEventListener('DOMContentLoaded', function() {
           }
           if (results && results[0] && results[0].result) {
             const selectedText = results[0].result;
-            // Only populate if fields are empty
-            if (!noteText.value.trim()) {
-              noteText.value = selectedText;
-            }
-            // Focus on the field
-            if (activeTab === 'add') {
-              noteText.focus();
-            }
+            
+            // Check if a note with this text already exists
+            chrome.storage.local.get(['notes'], function(data) {
+              const notes = data.notes || [];
+              const existingNote = notes.find(note => note.text === selectedText);
+              
+              if (existingNote) {
+                // If duplicate found, switch to edit mode
+                editNote(existingNote);
+              } else {
+                // Only populate if fields are empty
+                if (!noteText.value.trim()) {
+                  noteText.value = selectedText;
+                }
+                // Focus on the field
+                if (activeTab === 'add') {
+                  noteText.focus();
+                }
+              }
+            });
           }
         });
       }
@@ -494,7 +584,6 @@ document.addEventListener('DOMContentLoaded', function() {
     editTab.style.display = 'block';
     
     // Always show notes in edit mode (for context)
-    notesList.style.display = 'block';
     
     // Populate edit fields
     editNoteId.value = note.id;
@@ -503,6 +592,10 @@ document.addEventListener('DOMContentLoaded', function() {
     editNoteUrl.value = note.url || '';
     editCreationDate.value = new Date(note.creationDate || note.timestamp).toLocaleDateString() + ' ' + 
                             new Date(note.creationDate || note.timestamp).toLocaleTimeString();
+    editLastUpdated.value = note.lastUpdated ? 
+                           new Date(note.lastUpdated).toLocaleDateString() + ' ' + 
+                           new Date(note.lastUpdated).toLocaleTimeString() : 
+                           editCreationDate.value;
     editNoteStatus.value = note.status || 'open';
     editNotePriority.value = note.priority || 'medium';
     editNoteTags.value = note.tags ? note.tags.join(' ') : '';
@@ -512,20 +605,54 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   // Apply edit button
-  applyEditBtn.addEventListener('click', function() {
+  applyEditBtn.addEventListener('click', async function() {
     const noteId = parseInt(editNoteId.value);
+    const originalNote = allNotes.find(n => n.id === noteId);
+    const newTitle = editNoteTitle.value.trim() || (editNoteText.value.trim().length > 40 ? 
+                     editNoteText.value.trim().substring(0, 40) + '...' : editNoteText.value.trim());
+    
+    // Check for duplicate title (excluding the note being edited)
+    const duplicateNote = allNotes.find(note => note.title === newTitle && note.id !== noteId);
+    if (duplicateNote) {
+      showToast('A note with this title already exists!', 'error');
+      return;
+    }
+    
     const updatedNote = {
       id: noteId,
-      title: editNoteTitle.value.trim() || (editNoteText.value.trim().length > 40 ? 
-              editNoteText.value.trim().substring(0, 40) + '...' : editNoteText.value.trim()),
+      db_id: originalNote?.db_id,
+      title: newTitle,
       text: editNoteText.value.trim(),
       url: editNoteUrl.value.trim(),
       tags: editNoteTags.value.trim() ? editNoteTags.value.trim().split(/[,;\s]+/).filter(tag => tag) : [],
       status: editNoteStatus.value,
       priority: editNotePriority.value,
-      creationDate: allNotes.find(n => n.id === noteId).creationDate,
-      timestamp: new Date().toISOString()
+      creationDate: originalNote?.creationDate,
+      timestamp: new Date().toISOString(),
+      lastUpdated: new Date().toISOString(),
+      userName: originalNote?.userName,
+      createdBy: originalNote?.createdBy
     };
+    
+    // If database is connected and note has db_id, sync to database
+    if (dbClient && dbClient.connected && updatedNote.db_id) {
+      try {
+        const result = await dbClient.updateNote(updatedNote);
+        if (!result.success) {
+          console.error('Failed to update note in database:', result.message);
+          if (result.message && result.message.includes('UNIQUE constraint')) {
+            showToast('A note with this title already exists in the database!', 'error');
+            return;
+          }
+        }
+      } catch (error) {
+        console.error('Failed to sync updated note to database:', error);
+        if (error.message && error.message.includes('UNIQUE constraint')) {
+          showToast('A note with this title already exists in the database!', 'error');
+          return;
+        }
+      }
+    }
     
     // Update in storage
     chrome.storage.local.get(['notes'], function(result) {
@@ -560,7 +687,6 @@ document.addEventListener('DOMContentLoaded', function() {
     queryContent.style.display = 'block';
     
     // Keep notes visible since we're going to Query tab
-    notesList.style.display = 'block';
   }
 
   // Settings functionality
@@ -598,15 +724,26 @@ document.addEventListener('DOMContentLoaded', function() {
   function checkDefaultView() {
     // First check if sidebar is open
     chrome.runtime.sendMessage({ action: 'checkForSidebar' }, (response) => {
-      if (response && response.sidebarOpen) {
+      if (chrome.runtime.lastError) {
+        // Error in communication, proceed with normal flow
+        console.log('Could not check for sidebar:', chrome.runtime.lastError.message);
+      } else if (response && response.sidebarOpen) {
         // Switch sidebar to Add tab and close popup
-        chrome.runtime.sendMessage({ action: 'switchToAddTab' });
+        chrome.runtime.sendMessage({ action: 'switchToAddTab' }, () => {
+          if (chrome.runtime.lastError) {
+            console.log('Could not switch tab:', chrome.runtime.lastError.message);
+          }
+        });
         window.close();
         return;
       }
       
       // Then check if there's already a browser tab open
       chrome.runtime.sendMessage({ action: 'checkForExistingTab' }, (response) => {
+        if (chrome.runtime.lastError) {
+          console.log('Could not check for existing tab:', chrome.runtime.lastError.message);
+          return;
+        }
         if (response && response.found) {
           // If found, close the popup
           window.close();
@@ -665,60 +802,99 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   // Show toast notification
-  function showToast(message, duration = 1500) {
+  function showToast(message, type = 'success') {
     const toast = document.createElement('div');
     toast.className = 'toast';
-    toast.textContent = message;
-    document.body.appendChild(toast);
+    if (type === 'error') {
+      toast.classList.add('error');
+    }
     
-    // Fade out and remove
-    setTimeout(() => {
-      toast.classList.add('fade-out');
+    // Create message text
+    const messageText = document.createElement('span');
+    messageText.textContent = message;
+    toast.appendChild(messageText);
+    
+    // Add close button for error toasts
+    if (type === 'error') {
+      const closeBtn = document.createElement('button');
+      closeBtn.className = 'toast-close';
+      closeBtn.innerHTML = '×';
+      closeBtn.onclick = () => {
+        toast.classList.add('fade-out');
+        setTimeout(() => toast.remove(), 300);
+      };
+      toast.appendChild(closeBtn);
+      
+      // Error toasts don't auto-dismiss
+    } else {
+      // Success toasts auto-dismiss after 1.5 seconds
       setTimeout(() => {
-        toast.remove();
-      }, 300);
-    }, duration);
+        toast.classList.add('fade-out');
+        setTimeout(() => {
+          toast.remove();
+        }, 300);
+      }, 1500);
+    }
+    
+    document.body.appendChild(toast);
   }
 
   // Check if opened from context menu and handle accordingly
   function checkContextMenuData() {
-    chrome.storage.local.get(['pendingNote', 'contextMenuTarget'], function(result) {
+    chrome.storage.local.get(['pendingNote', 'contextMenuTarget', 'editNoteId'], function(result) {
       if (result.pendingNote) {
         const noteData = result.pendingNote;
         const targetView = result.contextMenuTarget || 'add';
+        const editNoteId = result.editNoteId;
         
         // Clear the pending note data
-        chrome.storage.local.remove(['pendingNote', 'contextMenuTarget']);
+        chrome.storage.local.remove(['pendingNote', 'contextMenuTarget', 'editNoteId']);
         
-        // If we have selected text, populate the fields
-        if (noteData.selectedText) {
-          noteText.value = noteData.selectedText;
+        // If we need to edit an existing note
+        if (targetView === 'edit' && editNoteId) {
+          // Find the note and switch to edit mode
+          chrome.storage.local.get(['notes'], function(data) {
+            const notes = data.notes || [];
+            const noteToEdit = notes.find(n => n.id === editNoteId);
+            if (noteToEdit) {
+              // Switch to edit mode
+              editNote(noteToEdit);
+            }
+          });
+        } else {
+          // Normal add mode
+          // If we have selected text, populate the fields
+          if (noteData.selectedText) {
+            noteText.value = noteData.selectedText;
+            
+            // Auto-generate title from page title or first 40 chars of selected text
+            const autoTitle = noteData.pageTitle || noteData.selectedText.substring(0, 40) + 
+                            (noteData.selectedText.length > 40 ? '...' : '');
+            noteTitle.value = autoTitle;
+          }
           
-          // Auto-generate title from page title or first 40 chars of selected text
-          const autoTitle = noteData.pageTitle || noteData.selectedText.substring(0, 40) + 
-                          (noteData.selectedText.length > 40 ? '...' : '');
-          noteTitle.value = autoTitle;
+          // Override the URL with the page where right-click happened
+          if (noteData.pageUrl) {
+            noteUrl.value = noteData.pageUrl;
+          }
+          
+          // Switch to the appropriate tab
+          setTimeout(() => {
+            switchToTab(targetView);
+          }, 150);
         }
-        
-        // Override the URL with the page where right-click happened
-        if (noteData.pageUrl) {
-          noteUrl.value = noteData.pageUrl;
-        }
-        
-        // Switch to the appropriate tab
-        setTimeout(() => {
-          switchToTab(targetView);
-        }, 150);
       }
     });
   }
   
   // Helper function to switch tabs
   function switchToTab(tabName) {
+    // First, hide all tabs
     tabButtons.forEach(btn => btn.classList.remove('active'));
     tabContents.forEach(content => {
       content.classList.remove('active');
-      content.style.display = '';
+      // Explicitly hide all tab contents
+      content.style.display = 'none';
     });
     
     const targetTabBtn = document.querySelector(`[data-tab="${tabName}"]`);
@@ -727,14 +903,13 @@ document.addEventListener('DOMContentLoaded', function() {
     if (targetTabBtn && targetTabContent) {
       targetTabBtn.classList.add('active');
       targetTabContent.classList.add('active');
+      // Force display for sidebar compatibility
+      targetTabContent.style.display = 'flex';
       activeTab = tabName;
       
       // Show/hide notes list based on tab
       if (tabName === 'query') {
-        notesList.style.display = 'block';
         filterNotes();
-      } else {
-        notesList.style.display = 'none';
       }
     }
   }
@@ -792,10 +967,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 activeTab = previousTab;
                 
                 if (previousTab === 'query') {
-                  notesList.style.display = 'block';
                   filterNotes();
-                } else {
-                  notesList.style.display = 'none';
                 }
               }
               break;
@@ -834,15 +1006,43 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Show notes if returning to query tab
             if (previousTab === 'query') {
-              notesList.style.display = 'block';
               filterNotes();
-            } else {
-              notesList.style.display = 'none';
             }
           }
         }, 1000);
       }
     });
+  });
+
+  // Cancel settings button handler
+  cancelSettingsBtn.addEventListener('click', function() {
+    // Reload settings to revert any changes
+    loadSettings();
+    
+    // Return to previous tab
+    tabButtons.forEach(btn => {
+      btn.style.display = '';
+      btn.classList.remove('active');
+    });
+    
+    tabContents.forEach(content => {
+      content.classList.remove('active');
+      content.style.display = '';
+    });
+    
+    const prevTabBtn = document.querySelector(`[data-tab="${previousTab}"]`);
+    const prevTabContent = document.getElementById(`${previousTab}-tab`);
+    
+    if (prevTabBtn && prevTabContent) {
+      prevTabBtn.classList.add('active');
+      prevTabContent.classList.add('active');
+      activeTab = previousTab;
+      
+      // Show notes if returning to query tab
+      if (previousTab === 'query') {
+        filterNotes();
+      }
+    }
   });
 
   // Theme change handler for immediate preview
@@ -865,28 +1065,50 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Load the database module dynamically
     try {
-      const module = await import('./database.js');
-      const DatabaseClient = module.default || window.DatabaseClient;
+      // Try to get DatabaseClient from window first (loaded by module script)
+      let DatabaseClient = window.DatabaseClient;
+      
+      // If not available, try dynamic import
+      if (!DatabaseClient) {
+        const module = await import('./database.js');
+        DatabaseClient = module.default;
+      }
+      
+      if (!DatabaseClient) {
+        throw new Error('DatabaseClient not found');
+      }
       
       dbClient = new DatabaseClient(url);
       const connected = await dbClient.testConnection();
       
       if (connected) {
         updateDbStatus('connected', 'Connected to database');
-        // Optionally sync notes on connection
-        // syncNotesToDatabase();
+        // Perform full sync on connection
+        try {
+          await performFullSync();
+          console.log('Initial sync completed on connection');
+        } catch (error) {
+          console.error('Initial sync failed:', error);
+        }
       } else {
         updateDbStatus('disconnected', 'Failed to connect to database');
       }
     } catch (error) {
       console.error('Database initialization error:', error);
-      updateDbStatus('disconnected', 'Database connection error');
+      updateDbStatus('disconnected', 'Database connection error: ' + error.message);
     }
   }
 
   function updateDbStatus(status, message) {
-    dbStatus.className = 'db-status ' + status;
-    dbStatus.textContent = message;
+    if (dbStatus) {
+      dbStatus.className = 'db-status ' + status;
+      dbStatus.textContent = message;
+    }
+    
+    // Show/hide sync button based on connection status
+    if (syncDatabaseBtn) {
+      syncDatabaseBtn.style.display = status === 'connected' ? 'block' : 'none';
+    }
   }
 
   // Add database ID tracking to notes
@@ -900,58 +1122,241 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     });
   }
-
-  // Override addNote to sync with database
-  const originalAddNote = addNote;
-  window.addNote = async function(title, text, url, tags, status, priority, date, callback) {
-    // First add locally
-    originalAddNote(title, text, url, tags, status, priority, date, async function(success) {
-      if (success && dbClient && dbClient.connected) {
-        // Then sync to database if connected
-        const note = {
-          title: title || (text.length > 40 ? text.substring(0, 40) + '...' : text),
-          text: text,
-          url: url,
-          tags: tags ? tags.split(/[,;\s]+/).map(tag => tag.trim()).filter(tag => tag) : [],
-          status: status,
-          priority: priority,
-          creationDate: date,
-          timestamp: new Date().toISOString()
-        };
+  
+  // Sync notes from database
+  async function syncNotesFromDatabase() {
+    if (!dbClient || !dbClient.connected) return;
+    
+    try {
+      const dbNotes = await dbClient.getNotes();
+      
+      // Get local notes
+      chrome.storage.local.get(['notes'], async function(result) {
+        const localNotes = result.notes || [];
         
-        const result = await dbClient.insertNote(note);
-        if (result.success && result.db_id) {
-          // Update the local note with the database ID
-          chrome.storage.local.get(['notes'], function(data) {
-            const notes = data.notes || [];
-            const lastNote = notes[0]; // Notes are unshifted, so newest is first
-            if (lastNote) {
-              updateNoteWithDbId(lastNote.id, result.db_id);
+        // Create a map of database notes by title for duplicate checking
+        const dbNotesByTitle = {};
+        dbNotes.forEach(dbNote => {
+          if (dbNote.title) {
+            dbNotesByTitle[dbNote.title] = dbNote;
+          }
+        });
+        
+        // First, sync local notes without db_id to database
+        let notesUpdated = false;
+        for (const note of localNotes) {
+          if (!note.db_id) {
+            // Check if a note with this title already exists in the database
+            const existingDbNote = dbNotesByTitle[note.title];
+            if (existingDbNote) {
+              // Link the local note to the existing database note
+              note.db_id = existingDbNote.db_id;
+              notesUpdated = true;
+              console.log('Linked local note to existing database note:', note.title);
+            } else {
+              // Try to insert new note
+              console.log('Syncing local note to database:', note.title || note.text?.substring(0, 40));
+              try {
+                const insertResult = await dbClient.insertNote(note);
+                if (insertResult.success && insertResult.db_id) {
+                  note.db_id = insertResult.db_id;
+                  notesUpdated = true;
+                  console.log('Local note synced with db_id:', insertResult.db_id);
+                }
+              } catch (error) {
+                console.error('Failed to sync local note to database:', error);
+                // If it's a unique constraint error, try to find the existing note
+                if (error.message && error.message.includes('UNIQUE constraint')) {
+                  console.log('Note with this title already exists in database');
+                }
+              }
             }
-          });
+          }
         }
-      }
-      // Call the original callback
-      if (callback) callback(success);
-    });
-  };
+        
+        // Create a map of local notes by db_id for easier lookup
+        const localNotesByDbId = {};
+        localNotes.forEach(note => {
+          if (note.db_id) {
+            localNotesByDbId[note.db_id] = note;
+          }
+        });
+        
+        // Merge database notes with local notes
+        dbNotes.forEach(dbNote => {
+          const existingLocal = localNotesByDbId[dbNote.db_id];
+          if (existingLocal) {
+            // Update existing local note with database data
+            Object.assign(existingLocal, dbNote);
+          } else {
+            // Add new note from database
+            localNotes.push(dbNote);
+          }
+        });
+        
+        // Save merged notes
+        chrome.storage.local.set({ notes: localNotes }, function() {
+          allNotes = localNotes;
+          filterNotes();
+          console.log('Synced notes from database');
+        });
+      });
+    } catch (error) {
+      console.error('Failed to sync notes from database:', error);
+    }
+  }
 
-  // Override deleteNote to sync with database
-  const originalDeleteNote = deleteNote;
-  window.deleteNote = async function(noteId) {
-    // Get the note before deleting to check for db_id
-    chrome.storage.local.get(['notes'], async function(result) {
-      const notes = result.notes || [];
-      const note = notes.find(n => n.id === noteId);
-      
-      if (note && note.db_id && dbClient && dbClient.connected) {
-        await dbClient.deleteNote(noteId, note.db_id);
-      }
-      
-      // Delete locally
-      originalDeleteNote(noteId);
+  // Handle sync database button
+  syncDatabaseBtn.addEventListener('click', async function() {
+    if (!dbClient || !dbClient.connected) {
+      showToast('Database not connected', 'error');
+      return;
+    }
+    
+    syncDatabaseBtn.disabled = true;
+    syncDatabaseBtn.textContent = 'Syncing...';
+    
+    try {
+      showToast('Starting database sync...');
+      await performFullSync();
+      showToast('Database sync completed successfully!');
+    } catch (error) {
+      console.error('Sync failed:', error);
+      showToast('Database sync failed: ' + error.message, 'error');
+    } finally {
+      syncDatabaseBtn.disabled = false;
+      syncDatabaseBtn.textContent = 'Sync Database';
+    }
+  });
+
+  // Perform full synchronization
+  async function performFullSync() {
+    if (!dbClient || !dbClient.connected) {
+      throw new Error('Database not connected');
+    }
+    
+    console.log('Starting full database sync...');
+    
+    // Get all notes from database
+    const dbNotes = await dbClient.getNotes();
+    console.log(`Found ${dbNotes.length} notes in database`);
+    
+    // Get all local notes
+    return new Promise((resolve, reject) => {
+      chrome.storage.local.get(['notes'], async function(result) {
+        try {
+          const localNotes = result.notes || [];
+          console.log(`Found ${localNotes.length} local notes`);
+          
+          // Create maps for easier lookup
+          const dbNotesByTitle = {};
+          const dbNotesById = {};
+          const localNotesByTitle = {};
+          const localNotesById = {};
+          
+          dbNotes.forEach(note => {
+            if (note.title) dbNotesByTitle[note.title] = note;
+            if (note.db_id) dbNotesById[note.db_id] = note;
+          });
+          
+          localNotes.forEach(note => {
+            if (note.title) localNotesByTitle[note.title] = note;
+            if (note.db_id) localNotesById[note.db_id] = note;
+          });
+          
+          let syncStats = {
+            uploadedToDb: 0,
+            downloadedFromDb: 0,
+            updated: 0,
+            conflicts: 0
+          };
+          
+          // 1. Upload local notes that don't exist in database
+          for (const localNote of localNotes) {
+            if (!localNote.db_id) {
+              // Check if a note with same title exists in DB
+              const dbNote = dbNotesByTitle[localNote.title];
+              if (dbNote) {
+                // Link them
+                localNote.db_id = dbNote.db_id;
+                localNote.lastUpdated = dbNote.lastUpdated || localNote.lastUpdated;
+                syncStats.updated++;
+                console.log(`Linked local note "${localNote.title}" to existing DB note`);
+              } else {
+                // Upload to database
+                try {
+                  const result = await dbClient.insertNote(localNote);
+                  if (result.success && result.db_id) {
+                    localNote.db_id = result.db_id;
+                    syncStats.uploadedToDb++;
+                    console.log(`Uploaded note "${localNote.title}" to database`);
+                  }
+                } catch (error) {
+                  console.error(`Failed to upload note "${localNote.title}":`, error);
+                }
+              }
+            } else {
+              // Check if it exists in database
+              const dbNote = dbNotesById[localNote.db_id];
+              if (dbNote) {
+                // Compare timestamps to decide which is newer
+                const localTime = new Date(localNote.lastUpdated || localNote.timestamp).getTime();
+                const dbTime = new Date(dbNote.lastUpdated || dbNote.timestamp).getTime();
+                
+                if (localTime > dbTime) {
+                  // Local is newer, update database
+                  try {
+                    await dbClient.updateNote(localNote);
+                    syncStats.updated++;
+                    console.log(`Updated database with newer local version of "${localNote.title}"`);
+                  } catch (error) {
+                    console.error(`Failed to update note "${localNote.title}":`, error);
+                  }
+                } else if (dbTime > localTime) {
+                  // Database is newer, update local
+                  Object.assign(localNote, dbNote);
+                  syncStats.updated++;
+                  console.log(`Updated local with newer database version of "${localNote.title}"`);
+                }
+              }
+            }
+          }
+          
+          // 2. Download notes from database that don't exist locally
+          for (const dbNote of dbNotes) {
+            const existingLocal = localNotesById[dbNote.db_id];
+            if (!existingLocal) {
+              // Check if a note with same title exists locally
+              const localByTitle = localNotesByTitle[dbNote.title];
+              if (localByTitle && !localByTitle.db_id) {
+                // Link them
+                localByTitle.db_id = dbNote.db_id;
+                Object.assign(localByTitle, dbNote);
+                syncStats.updated++;
+                console.log(`Linked database note "${dbNote.title}" to existing local note`);
+              } else {
+                // Add new note from database
+                localNotes.push(dbNote);
+                syncStats.downloadedFromDb++;
+                console.log(`Downloaded new note "${dbNote.title}" from database`);
+              }
+            }
+          }
+          
+          // Save synced notes
+          chrome.storage.local.set({ notes: localNotes }, function() {
+            allNotes = localNotes;
+            filterNotes();
+            console.log('Sync completed:', syncStats);
+            resolve(syncStats);
+          });
+          
+        } catch (error) {
+          reject(error);
+        }
+      });
     });
-  };
+  }
 
   // Handle database URL change
   databaseUrl.addEventListener('change', function() {
@@ -973,18 +1378,105 @@ document.addEventListener('DOMContentLoaded', function() {
       // Respond to ping to identify as sidebar
       if (isSidebar) {
         sendResponse({ source: 'sidebar' });
+      } else {
+        sendResponse({ source: 'popup' });
       }
+      return false; // Synchronous response
     } else if (request.action === 'switchToTab' && isSidebar) {
       // Switch to requested tab
       switchToTab(request.tab);
       // Also handle context menu data if switching to add
-      if (request.tab === 'add') {
-        checkContextMenuData();
+      if (request.tab === 'add' || request.tab === 'edit') {
+        // Add a small delay to ensure DOM is ready
+        setTimeout(() => {
+          checkContextMenuData();
+        }, 100);
       }
+      sendResponse({ success: true });
+      return false; // Synchronous response
     } else if (request.action === 'handleContextMenu' && isSidebar) {
       // Handle context menu data in sidebar
       checkContextMenuData();
+      sendResponse({ success: true });
+      return false; // Synchronous response
     }
-    return true;
+    
+    // For any unhandled action, send empty response
+    sendResponse({});
+    return false;
+  });
+
+  // Resize functionality (only for popup view)
+  const resizeHandle = document.getElementById('resizeHandle');
+  const isPopupView = !window.location.href.includes('sidepanel.html') && 
+                      !window.location.href.includes('tab.html');
+  
+  if (!isPopupView && resizeHandle) {
+    resizeHandle.style.display = 'none';
+  }
+  
+  let isResizing = false;
+  let startX, startY, startWidth, startHeight;
+
+  // Load saved dimensions (only for popup view)
+  if (isPopupView) {
+    chrome.storage.local.get(['popupDimensions'], function(result) {
+      if (result.popupDimensions) {
+        const { width, height } = result.popupDimensions;
+        document.body.style.width = width + 'px';
+        document.body.style.height = height + 'px';
+      }
+    });
+  }
+
+  if (resizeHandle && isPopupView) {
+    resizeHandle.addEventListener('mousedown', function(e) {
+      isResizing = true;
+      startX = e.clientX;
+      startY = e.clientY;
+      startWidth = parseInt(document.defaultView.getComputedStyle(document.body).width, 10);
+      startHeight = parseInt(document.defaultView.getComputedStyle(document.body).height, 10);
+      
+      // Prevent text selection while resizing
+      document.body.style.userSelect = 'none';
+      document.body.style.cursor = 'nwse-resize';
+      e.preventDefault();
+    });
+  }
+
+  document.addEventListener('mousemove', function(e) {
+    if (!isResizing) return;
+    
+    // Calculate new dimensions based on mouse movement
+    const deltaX = e.clientX - startX;
+    const deltaY = e.clientY - startY;
+    
+    const newWidth = startWidth + deltaX;
+    const newHeight = startHeight + deltaY;
+    
+    // Apply constraints - increased maximums and allow window size
+    const maxWidth = Math.min(window.screen.availWidth * 0.9, 1200);
+    const maxHeight = Math.min(window.screen.availHeight * 0.9, 900);
+    
+    const constrainedWidth = Math.min(Math.max(newWidth, 300), maxWidth);
+    const constrainedHeight = Math.min(Math.max(newHeight, 400), maxHeight);
+    
+    document.body.style.width = constrainedWidth + 'px';
+    document.body.style.height = constrainedHeight + 'px';
+  });
+
+  document.addEventListener('mouseup', function() {
+    if (isResizing) {
+      isResizing = false;
+      document.body.style.userSelect = '';
+      document.body.style.cursor = '';
+      
+      // Save dimensions
+      const width = parseInt(document.body.style.width, 10);
+      const height = parseInt(document.body.style.height, 10);
+      chrome.storage.local.set({ 
+        popupDimensions: { width, height } 
+      });
+    }
   });
 });

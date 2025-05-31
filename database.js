@@ -10,16 +10,40 @@ class DatabaseClient {
   // Test connection to the database
   async testConnection() {
     try {
-      const response = await fetch(`${this.baseUrl}/health`, {
-        method: 'GET',
+      console.log('Testing database connection to:', this.baseUrl);
+      // Test with a simple query
+      const response = await fetch(`${this.baseUrl}/query`, {
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-        }
+        },
+        body: JSON.stringify({
+          sql: "SELECT 1",
+          database: "default"
+        })
       });
+      
+      console.log('Connection test response status:', response.status);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Connection test failed with status:', response.status, 'Error:', errorText);
+        
+        // Try to parse error for better messaging
+        try {
+          const errorData = JSON.parse(errorText);
+          if (errorData.error && errorData.error.includes('Database') && errorData.error.includes('not found')) {
+            console.warn('Database not found - it may need to be created from schema');
+          }
+        } catch (e) {
+          // Ignore JSON parse errors
+        }
+      }
+      
       this.connected = response.ok;
       return this.connected;
     } catch (error) {
-      console.error('Database connection test failed:', error);
+      console.error('Database connection test failed with error:', error.message, error);
       this.connected = false;
       return false;
     }
@@ -27,10 +51,21 @@ class DatabaseClient {
 
   // Convert our note format to database format
   noteToDbFormat(note) {
+    // If no title provided, use first 40 characters of description
+    let title = note.title;
+    if (!title || title.trim() === '') {
+      const description = note.text || '';
+      title = description.substring(0, 40);
+      if (description.length > 40) {
+        title += '...';
+      }
+    }
+    
     return {
-      title: note.title || '',
+      title: title || 'Untitled Note',
       description: note.text || '',
       created_at: note.creationDate || note.timestamp || new Date().toISOString(),
+      created_by: note.createdBy || note.userName || null,
       status: note.status || 'open',
       priority: note.priority || 'medium',
       url: note.url || null
@@ -46,6 +81,8 @@ class DatabaseClient {
       text: dbNote.description || '',
       creationDate: dbNote.created_at,
       timestamp: dbNote.created_at,
+      lastUpdated: dbNote.last_updated || dbNote.created_at,
+      createdBy: dbNote.created_by || '',
       status: dbNote.status || 'open',
       priority: dbNote.priority || 'medium',
       url: dbNote.url || '',
@@ -58,22 +95,46 @@ class DatabaseClient {
     try {
       const values = this.noteToDbFormat(note);
       
-      const response = await fetch(`${this.baseUrl}/crud/insert`, {
+      // Use SQL INSERT with escaped values
+      const escapeSql = (str) => {
+        if (str === null || str === undefined) return 'NULL';
+        return `'${String(str).replace(/'/g, "''")}'`;
+      };
+      
+      const sql = `INSERT INTO notes (title, description, created_at, created_by, status, priority, url, last_updated) 
+                   VALUES (${escapeSql(values.title)}, ${escapeSql(values.description)}, ${escapeSql(values.created_at)}, ${escapeSql(values.created_by)}, ${escapeSql(values.status)}, ${escapeSql(values.priority)}, ${escapeSql(values.url)}, ${escapeSql(values.created_at)})`;
+      
+      const response = await fetch(`${this.baseUrl}/query`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          table_name: 'notes',
-          values: values
+          sql: sql,
+          parameters: {},
+          database: 'default'
         })
       });
 
       const result = await response.json();
-      if (result.success) {
-        // Store the database ID with the note
-        const insertedId = result.inserted_id;
-        if (insertedId && insertedId !== -1) {
+      if (result.result_set && !result.error) {
+        // Get the inserted ID using last_insert_rowid()
+        const idResponse = await fetch(`${this.baseUrl}/query`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            sql: "SELECT last_insert_rowid() as id",
+            parameters: {},
+            database: 'default'
+          })
+        });
+        
+        const idResult = await idResponse.json();
+        if (idResult.result_set && idResult.result_set.rows && idResult.result_set.rows.length > 0) {
+          const insertedId = idResult.result_set.rows[0].values[0].int_value;
+          
           // Handle tags
           if (note.tags && note.tags.length > 0) {
             await this.syncNoteTags(insertedId, note.tags);
@@ -81,7 +142,7 @@ class DatabaseClient {
           return { success: true, db_id: insertedId };
         }
       }
-      return { success: false, message: result.message };
+      return { success: false, message: result.error || 'Insert failed' };
     } catch (error) {
       console.error('Failed to insert note:', error);
       return { success: false, message: error.message };
@@ -97,26 +158,43 @@ class DatabaseClient {
     try {
       const values = this.noteToDbFormat(note);
       
-      const response = await fetch(`${this.baseUrl}/crud/update`, {
+      const escapeSql = (str) => {
+        if (str === null || str === undefined) return 'NULL';
+        return `'${String(str).replace(/'/g, "''")}'`;
+      };
+      
+      const sql = `UPDATE notes SET 
+                   title = ${escapeSql(values.title)},
+                   description = ${escapeSql(values.description)},
+                   created_at = ${escapeSql(values.created_at)},
+                   created_by = ${escapeSql(values.created_by)},
+                   status = ${escapeSql(values.status)},
+                   priority = ${escapeSql(values.priority)},
+                   url = ${escapeSql(values.url)},
+                   last_updated = CURRENT_TIMESTAMP
+                   WHERE id = ${note.db_id}`;
+      
+      const response = await fetch(`${this.baseUrl}/query`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          table_name: 'notes',
-          values: values,
-          where_clause: `id = ${note.db_id}`
+          sql: sql,
+          parameters: {},
+          database: 'default'
         })
       });
 
       const result = await response.json();
-      if (result.success) {
+      if (result.result_set && !result.error) {
         // Update tags
         if (note.tags) {
           await this.syncNoteTags(note.db_id, note.tags);
         }
+        return { success: true };
       }
-      return result;
+      return { success: false, message: result.error || 'Update failed' };
     } catch (error) {
       console.error('Failed to update note:', error);
       return { success: false, message: error.message };
@@ -131,35 +209,47 @@ class DatabaseClient {
 
     try {
       // First delete tag associations
-      await fetch(`${this.baseUrl}/crud/delete`, {
+      const deleteTagsSql = `DELETE FROM note_tags WHERE note_id = ${dbId}`;
+      await fetch(`${this.baseUrl}/query`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          table_name: 'note_tags',
-          where_clause: `note_id = ${dbId}`
+          sql: deleteTagsSql,
+          parameters: {},
+          database: 'default'
         })
       });
 
       // Then delete the note
-      const response = await fetch(`${this.baseUrl}/crud/delete`, {
+      const deleteNoteSql = `DELETE FROM notes WHERE id = ${dbId}`;
+      const response = await fetch(`${this.baseUrl}/query`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          table_name: 'notes',
-          where_clause: `id = ${dbId}`
+          sql: deleteNoteSql,
+          parameters: {},
+          database: 'default'
         })
       });
 
       const result = await response.json();
-      return result;
+      if (result.result_set && !result.error) {
+        return { success: true };
+      }
+      return { success: false, message: result.error || 'Delete failed' };
     } catch (error) {
       console.error('Failed to delete note:', error);
       return { success: false, message: error.message };
     }
+  }
+
+  // Get all notes (alias for queryNotes with no filters)
+  async getNotes() {
+    return this.queryNotes();
   }
 
   // Query notes with optional filters
@@ -171,14 +261,15 @@ class DatabaseClient {
       }
       sql += ` ORDER BY created_at DESC LIMIT ${limit}`;
 
-      const response = await fetch(`${this.baseUrl}/crud/query`, {
+      const response = await fetch(`${this.baseUrl}/query`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           sql: sql,
-          parameters: {}
+          parameters: {},
+          database: 'default'
         })
       });
 
@@ -234,15 +325,21 @@ class DatabaseClient {
   // Get or create a tag
   async getOrCreateTag(tagName) {
     try {
+      const escapeSql = (str) => {
+        if (str === null || str === undefined) return 'NULL';
+        return `'${String(str).replace(/'/g, "''")}'`;
+      };
+      
       // First try to find existing tag
-      const response = await fetch(`${this.baseUrl}/crud/query`, {
+      const response = await fetch(`${this.baseUrl}/query`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          sql: 'SELECT id FROM tags WHERE name = ?',
-          parameters: { name: tagName }
+          sql: `SELECT id FROM tags WHERE name = ${escapeSql(tagName)}`,
+          parameters: {},
+          database: 'default'
         })
       });
 
@@ -253,20 +350,37 @@ class DatabaseClient {
       }
 
       // Create new tag
-      const insertResponse = await fetch(`${this.baseUrl}/crud/insert`, {
+      const insertResponse = await fetch(`${this.baseUrl}/query`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          table_name: 'tags',
-          values: { name: tagName }
+          sql: `INSERT INTO tags (name) VALUES (${escapeSql(tagName)})`,
+          parameters: {},
+          database: 'default'
         })
       });
 
       const insertResult = await insertResponse.json();
-      if (insertResult.success) {
-        return insertResult.inserted_id;
+      if (insertResult.result_set && !insertResult.error) {
+        // Get the inserted ID
+        const idResponse = await fetch(`${this.baseUrl}/query`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            sql: "SELECT last_insert_rowid() as id",
+            parameters: {},
+            database: 'default'
+          })
+        });
+        
+        const idResult = await idResponse.json();
+        if (idResult.result_set && idResult.result_set.rows && idResult.result_set.rows.length > 0) {
+          return idResult.result_set.rows[0].values[0].int_value;
+        }
       }
       
       return null;
@@ -280,14 +394,16 @@ class DatabaseClient {
   async syncNoteTags(noteId, tags) {
     try {
       // Delete existing tag associations
-      await fetch(`${this.baseUrl}/crud/delete`, {
+      const deleteTagsSql = `DELETE FROM note_tags WHERE note_id = ${noteId}`;
+      await fetch(`${this.baseUrl}/query`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          table_name: 'note_tags',
-          where_clause: `note_id = ${noteId}`
+          sql: deleteTagsSql,
+          parameters: {},
+          database: 'default'
         })
       });
 
@@ -295,17 +411,16 @@ class DatabaseClient {
       for (const tagName of tags) {
         const tagId = await this.getOrCreateTag(tagName);
         if (tagId) {
-          await fetch(`${this.baseUrl}/crud/insert`, {
+          const insertSql = `INSERT INTO note_tags (note_id, tag_id) VALUES (${noteId}, ${tagId})`;
+          await fetch(`${this.baseUrl}/query`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              table_name: 'note_tags',
-              values: {
-                note_id: noteId,
-                tag_id: tagId
-              }
+              sql: insertSql,
+              parameters: {},
+              database: 'default'
             })
           });
         }
@@ -318,7 +433,7 @@ class DatabaseClient {
   // Get tags for a note
   async getNoteTags(noteId) {
     try {
-      const response = await fetch(`${this.baseUrl}/crud/query`, {
+      const response = await fetch(`${this.baseUrl}/query`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -327,7 +442,8 @@ class DatabaseClient {
           sql: `SELECT t.name FROM tags t 
                 JOIN note_tags nt ON t.id = nt.tag_id 
                 WHERE nt.note_id = ${noteId}`,
-          parameters: {}
+          parameters: {},
+          database: 'default'
         })
       });
 
@@ -389,6 +505,9 @@ class DatabaseClient {
 }
 
 // Export for use in other files
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = DatabaseClient;
+export default DatabaseClient;
+
+// Also make available on window for non-module scripts
+if (typeof window !== 'undefined') {
+  window.DatabaseClient = DatabaseClient;
 }

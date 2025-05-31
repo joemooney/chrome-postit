@@ -18,11 +18,31 @@
       flex-direction: column;
       overflow: hidden;
     }
-    #notesList {
+    /* Override popup.css for sidebar layout */
+    .tabs {
+      flex-shrink: 0;
+    }
+    .tab-content {
+      flex: 1;
+      min-height: 0;
+      display: none;
+    }
+    .tab-content.active {
+      display: flex;
+      flex-direction: column;
+    }
+    #query-tab.active {
+      display: flex;
+      flex-direction: column;
+    }
+    #query-tab .filter-section {
+      flex-shrink: 0;
+    }
+    #query-tab .notes-list {
       flex: 1;
       overflow-y: auto;
-      max-height: none !important; /* Override popup.css restriction */
-      height: auto;
+      max-height: none !important;
+      min-height: 0;
     }
     /* Ensure consistent styling in sidebar */
     .note-input {
@@ -95,6 +115,7 @@
         </select>
         <button id="clearFilter">Clear</button>
       </div>
+      <div id="notesList" class="notes-list"></div>
     </div>
     
     <div class="tab-content" id="settings-tab">
@@ -129,11 +150,14 @@
         <h3>Database Sync</h3>
         <div class="setting-item">
           <label for="databaseUrl">Database URL:</label>
-          <input type="text" id="databaseUrl" placeholder="https://your-database-url.com">
+          <input type="text" id="databaseUrl" placeholder="http://127.0.0.1:8080">
         </div>
         <div id="db-status" class="db-status"></div>
         
-        <button id="saveSettings" class="primary-btn">Save Settings</button>
+        <div class="settings-actions">
+          <button id="saveSettings" class="primary-btn">Save Settings</button>
+          <button id="cancelSettings" class="secondary-btn">Cancel</button>
+        </div>
       </div>
     </div>
     
@@ -165,8 +189,6 @@
         </div>
       </div>
     </div>
-    
-    <div id="notesList" class="notes-list"></div>
   </div>
   <script type="module" src="database.js"></script>
   <script src="popup.js"></script>

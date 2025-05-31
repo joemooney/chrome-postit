@@ -71,6 +71,7 @@
         </select>
         <button id="clearFilter">Clear</button>
       </div>
+      <div id="notesList" class="notes-list"></div>
     </div>
     
     <div class="tab-content" id="settings-tab">
@@ -105,11 +106,15 @@
         <h3>Database Sync</h3>
         <div class="setting-item">
           <label for="databaseUrl">Database URL:</label>
-          <input type="text" id="databaseUrl" placeholder="Optional: gRPC server URL">
+          <input type="text" id="databaseUrl" placeholder="http://127.0.0.1:8080">
         </div>
         <div class="db-status" id="dbStatus"></div>
+        <button id="syncDatabaseBtn" class="secondary-btn" style="display: none; margin-top: 10px;">Sync Database</button>
         
-        <button id="saveSettings" class="primary-btn">Save Settings</button>
+        <div class="settings-actions">
+          <button id="saveSettings" class="primary-btn">Save Settings</button>
+          <button id="cancelSettings" class="secondary-btn">Cancel</button>
+        </div>
       </div>
     </div>
     
@@ -120,6 +125,7 @@
         <textarea id="editNoteText" placeholder="Note content..."></textarea>
         <input type="text" id="editNoteUrl" placeholder="URL">
         <input type="text" id="editCreationDate" placeholder="Creation Date" readonly>
+        <input type="text" id="editLastUpdated" placeholder="Last Updated" readonly>
         <div class="field-row">
           <select id="editNoteStatus">
             <option value="open">Open</option>
@@ -141,10 +147,9 @@
         </div>
       </div>
     </div>
-    
-    <div id="notesList" class="notes-list"></div>
   </div>
   <script type="module" src="database.js"></script>
   <script src="popup.js"></script>
+  <div class="resize-handle" id="resizeHandle"></div>
 </body>
 </html>

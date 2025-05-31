@@ -72,6 +72,41 @@ h1 {
   background: #f9f9f9;
 }
 
+/* Updated layout for tabs inside content */
+.content {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.tab-content {
+  display: none;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.tab-content.active {
+  display: flex;
+  flex-direction: column;
+}
+
+#query-tab.active {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+#query-tab .filter-section {
+  flex-shrink: 0;
+  margin-bottom: 16px;
+}
+
+#query-tab .notes-list {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
+
 /* Tabs */
 .tabs {
   display: flex;

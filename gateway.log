@@ -1,0 +1,63 @@
+Connected to GRPC server at 127.0.0.1:50051
+REST Gateway running on port 8080
+Endpoints:
+  POST /query - Execute SQL queries
+  POST /insert - Insert records
+  POST /update - Update records
+  POST /delete - Delete records
+  GET /health - Health check
+Insert request: {
+  table_name: 'notes',
+  values: {
+    title: 'Test Note',
+    description: 'This is a test note',
+    status: 'open',
+    priority: 'medium'
+  },
+  database: 'default'
+}
+Converted gRPC values: {
+  "title": {
+    "string_value": "Test Note"
+  },
+  "description": {
+    "string_value": "This is a test note"
+  },
+  "status": {
+    "string_value": "open"
+  },
+  "priority": {
+    "string_value": "medium"
+  }
+}
+Insert error: 13 INTERNAL: Database error: error returned from database: (code: 1299) NOT NULL constraint failed: notes.title
+Query request: { sql: 'PRAGMA table_info(notes)', database: 'default' }
+Query request: {
+  sql: "INSERT INTO notes (title, description, status, priority) VALUES ('Test Note', 'This is a test note', 'open', 'medium')",
+  database: 'default'
+}
+Query request: { sql: 'SELECT * FROM notes', database: 'default' }
+Query request: { sql: 'SELECT 1', database: 'default' }
+Query request: { sql: 'SELECT 1', database: 'default' }
+Query request: {
+  sql: 'INSERT INTO notes (title, description, created_at, created_by, status, priority, url) \n' +
+    '                   VALUES (?, ?, ?, ?, ?, ?, ?)',
+  database: 'default'
+}
+Query error: 13 INTERNAL: Database error: error returned from database: (code: 1299) NOT NULL constraint failed: notes.title
+Query request: { sql: 'SELECT 1', database: 'default' }
+Query request: { sql: 'SELECT 1', database: 'default' }
+Query request: {
+  sql: 'INSERT INTO notes (title, description, created_at, created_by, status, priority, url) \n' +
+    '                   VALUES (?, ?, ?, ?, ?, ?, ?)',
+  database: 'default'
+}
+Query error: 13 INTERNAL: Database error: error returned from database: (code: 1299) NOT NULL constraint failed: notes.title
+Query request: { sql: 'SELECT 1', database: 'default' }
+Query request: { sql: 'SELECT 1', database: 'default' }
+Query request: {
+  sql: 'INSERT INTO notes (title, description, created_at, created_by, status, priority, url) \n' +
+    '                   VALUES (?, ?, ?, ?, ?, ?, ?)',
+  database: 'default'
+}
+Query error: 13 INTERNAL: Database error: error returned from database: (code: 1299) NOT NULL constraint failed: notes.title

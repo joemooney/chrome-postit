@@ -1,18 +1,41 @@
 body {
   width: 350px;
   min-width: 300px;
-  max-width: 600px;
   min-height: 400px;
   margin: 0;
   padding: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
   background: #f5f5f5;
-  resize: both;
   overflow: auto;
+  position: relative;
+}
+
+/* Resize handle */
+.resize-handle {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 20px;
+  height: 20px;
+  background: linear-gradient(135deg, transparent 50%, #999 50%);
+  cursor: nwse-resize;
+  z-index: 1000;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+  user-select: none;
+}
+
+.resize-handle:hover {
+  opacity: 1;
+  background: linear-gradient(135deg, transparent 50%, #666 50%);
 }
 
 .container {
   padding: 16px;
+  height: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
 }
 
 .header {
@@ -81,10 +104,35 @@ h1 {
 
 .tab-content {
   display: none;
+  flex: 1;
+  overflow-y: auto;
 }
 
 .tab-content.active {
-  display: block;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Query tab specific layout */
+#query-tab {
+  display: none;
+}
+
+#query-tab.active {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+#query-tab .filter-section {
+  flex-shrink: 0;
+  margin-bottom: 16px;
+}
+
+#query-tab .notes-list {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0; /* Important for flexbox */
 }
 
 .note-input {
@@ -111,6 +159,7 @@ h1 {
 #noteTitle, #noteTitle2, #editNoteTitle {
   width: 100%;
   padding: 10px 12px;
+  margin-bottom: 12px;
   border: 1px solid #ddd;
   border-radius: 4px;
   font-size: 14px;
@@ -204,8 +253,7 @@ h1 {
 }
 
 .notes-list {
-  max-height: 300px;
-  overflow-y: auto;
+  /* Styles moved to #query-tab .notes-list for better specificity */
 }
 
 .note {
@@ -304,6 +352,12 @@ h1 {
 
 .secondary-btn:hover {
   background: #d0d0d0;
+}
+
+.settings-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
 }
 
 ::-webkit-scrollbar {
@@ -444,6 +498,11 @@ h1 {
 
 .meta-date {
   color: #999;
+}
+
+.meta-updated {
+  color: #666;
+  font-style: italic;
 }
 
 .meta-status {
@@ -687,6 +746,10 @@ body.dark-theme .meta-date {
   color: #888;
 }
 
+body.dark-theme .meta-updated {
+  color: #999;
+}
+
 body.dark-theme .tabs {
   border-bottom-color: #444;
 }
@@ -771,6 +834,22 @@ body.dark-theme .details-section {
   display: none;
 }
 
+#syncDatabaseBtn {
+  width: 100%;
+  background: #4285f4;
+  color: white;
+  font-weight: 500;
+}
+
+#syncDatabaseBtn:hover:not(:disabled) {
+  background: #3367d6;
+}
+
+#syncDatabaseBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .db-status.connected {
   display: block;
   background: #d4edda;
@@ -810,6 +889,14 @@ body.dark-theme .db-status.connecting {
   border-color: #f9ab00;
 }
 
+body.dark-theme #syncDatabaseBtn {
+  background: #1a73e8;
+}
+
+body.dark-theme #syncDatabaseBtn:hover:not(:disabled) {
+  background: #1765cc;
+}
+
 /* Toast notification */
 .toast {
   position: fixed;
@@ -826,6 +913,30 @@ body.dark-theme .db-status.connecting {
   z-index: 10000;
   opacity: 0;
   animation: toastSlideUp 0.3s ease-out forwards;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.toast.error {
+  background: #dc3545;
+  padding-right: 16px;
+}
+
+.toast-close {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 0 0 10px;
+  opacity: 0.8;
+  transition: opacity 0.2s;
+}
+
+.toast-close:hover {
+  opacity: 1;
 }
 
 @keyframes toastSlideUp {
@@ -855,4 +966,8 @@ body.dark-theme .db-status.connecting {
 body.dark-theme .toast {
   background: #1e4620;
   box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+body.dark-theme .toast.error {
+  background: #721c24;
 }

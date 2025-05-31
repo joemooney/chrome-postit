@@ -1,0 +1,47 @@
+syntax = "proto3";
+
+package datasink.common;
+
+// Generic value that can hold different data types
+message Value {
+  oneof value {
+    string string_value = 1;
+    int64 int_value = 2;
+    double float_value = 3;
+    bool bool_value = 4;
+    bytes bytes_value = 5;
+    // Null value - if this field is set, the value is null
+    bool null_value = 6;
+  }
+}
+
+// Column metadata for query results
+message Column {
+  // Column name
+  string name = 1;
+  
+  // Data type (implementation specific)
+  string type = 2;
+  
+  // Whether the column can contain NULL values
+  bool nullable = 3;
+}
+
+// A single row of data
+message Row {
+  // Values for each column in the row
+  // Order corresponds to the columns in the ResultSet
+  repeated Value values = 1;
+}
+
+// Error information
+message Error {
+  // Error code (implementation specific)
+  int32 code = 1;
+  
+  // Human-readable error message
+  string message = 2;
+  
+  // Optional additional details
+  string details = 3;
+}

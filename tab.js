@@ -65,7 +65,6 @@ document.addEventListener('DOMContentLoaded', function() {
   setCurrentDate();
   
   // Notes are always visible in tab view
-  notesList.style.display = 'grid';
   
   // Handle settings button
   if (openSettingsBtn) {
@@ -555,7 +554,11 @@ document.addEventListener('DOMContentLoaded', function() {
         setTimeout(() => {
           switch (settings.defaultView) {
             case 'sidebar':
-              chrome.runtime.sendMessage({ action: 'openSidePanel' });
+              chrome.runtime.sendMessage({ action: 'openSidePanel' }, (response) => {
+                if (chrome.runtime.lastError) {
+                  console.log('Could not open side panel:', chrome.runtime.lastError.message);
+                }
+              });
               window.close();
               break;
               
@@ -611,26 +614,51 @@ document.addEventListener('DOMContentLoaded', function() {
   chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
     if (request.action === 'handleContextMenu') {
       checkContextMenuData();
+      sendResponse({ success: true });
+    } else {
+      // For any unhandled action, send empty response
+      sendResponse({});
     }
+    return false; // Synchronous response
   });
 
   // Check for context menu data
   function checkContextMenuData() {
-    chrome.storage.local.get(['contextMenuData'], function(result) {
-      if (result.contextMenuData) {
-        const data = result.contextMenuData;
+    chrome.storage.local.get(['pendingNote', 'contextMenuTarget', 'editNoteId'], function(result) {
+      if (result.pendingNote) {
+        const noteData = result.pendingNote;
+        const targetView = result.contextMenuTarget || 'add';
+        const editNoteId = result.editNoteId;
         
-        // Populate the appropriate fields based on available data
-        if (data.selectedText || data.pageTitle || data.pageUrl) {
-          // Populate fields with context menu data
-          if (data.selectedText) {
-            noteText.value = data.selectedText;
+        // Clear the pending note data
+        chrome.storage.local.remove(['pendingNote', 'contextMenuTarget', 'editNoteId']);
+        
+        // If we need to edit an existing note
+        if (targetView === 'edit' && editNoteId) {
+          // Find the note and switch to edit mode
+          chrome.storage.local.get(['notes'], function(data) {
+            const notes = data.notes || [];
+            const noteToEdit = notes.find(n => n.id === editNoteId);
+            if (noteToEdit) {
+              // Switch to edit mode
+              editNote(noteToEdit);
+            }
+          });
+        } else {
+          // Normal add mode
+          // If we have selected text, populate the fields
+          if (noteData.selectedText) {
+            noteText.value = noteData.selectedText;
+            
+            // Auto-generate title from page title or first 40 chars of selected text
+            const autoTitle = noteData.pageTitle || noteData.selectedText.substring(0, 40) + 
+                            (noteData.selectedText.length > 40 ? '...' : '');
+            noteTitle.value = autoTitle;
           }
-          if (data.pageTitle) {
-            noteTitle.value = data.pageTitle;
-          }
-          if (data.pageUrl) {
-            noteUrl.value = data.pageUrl;
+          
+          // Override the URL with the page where right-click happened
+          if (noteData.pageUrl) {
+            noteUrl.value = noteData.pageUrl;
             // Expand details section if URL is provided
             if (detailsSection && detailsSection.style.display === 'none') {
               detailsSection.style.display = 'block';
@@ -640,10 +668,11 @@ document.addEventListener('DOMContentLoaded', function() {
               }
             }
           }
-          switchToTab('add');
           
-          // Clear the stored data after using it
-          chrome.storage.local.remove('contextMenuData');
+          // Switch to the appropriate tab
+          setTimeout(() => {
+            switchToTab(targetView);
+          }, 150);
         }
       }
     });
