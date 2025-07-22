@@ -326,3 +326,11 @@ Note: Due to Chrome API restrictions, the sidebar view cannot be set as a true d
 - Compressed CLAUDE.md to concise overview format
 - Documented session prompts in PROMPT_HISTORY.md
 - Established new documentation pattern for future sessions
+
+### Documentation Tracking Request
+**Prompt:** [User viewing CLAUDE.md and PROMPT_HISTORY.md files]
+
+- User requested to track all prompts in PROMPT_HISTORY.md
+- User wants CLAUDE.md kept updated with system requirements and implementation choices
+- User requests git workflow with commits and pushes after each set of changes
+- Established documentation maintenance process for future sessions
